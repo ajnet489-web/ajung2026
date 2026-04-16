@@ -10,19 +10,24 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
         body {
             font-family: 'Noto Sans KR', sans-serif;
-            background-color: #f8fafc;
+            background-color: #f3f4f6;
         }
         .filter-card {
             background: white;
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-radius: 1.25rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
         }
         .product-card {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeIn 0.5s ease-out forwards;
         }
         .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .skeleton {
             background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
@@ -33,17 +38,29 @@
             0% { background-position: 200% 0; }
             100% { background-position: -200% 0; }
         }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body class="text-gray-800">
+<body class="text-gray-900">
 
-    <header class="bg-white border-b sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-            <h1 class="text-2xl font-bold text-blue-600">RentalHub</h1>
-            <nav class="hidden md:flex space-x-8 font-medium">
-                <a href="#" class="hover:text-blue-500">정수기</a>
-                <a href="#" class="hover:text-blue-500">공기청정기</a>
-                <a href="#" class="hover:text-blue-500 text-gray-400">마이페이지</a>
+    <!-- Navigation -->
+    <header class="bg-white/80 backdrop-blur-md border-b sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-18 flex items-center justify-between py-4">
+            <div class="flex items-center gap-2">
+                <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                </div>
+                <h1 class="text-2xl font-black text-gray-900 tracking-tight">Rental<span class="text-blue-600">Hub</span></h1>
+            </div>
+            <nav class="hidden md:flex items-center space-x-8 font-semibold text-gray-500">
+                <a href="#" class="text-blue-600 border-b-2 border-blue-600 pb-1">전체상품</a>
+                <a href="#" class="hover:text-blue-600 transition-colors">베스트</a>
+                <a href="#" class="hover:text-blue-600 transition-colors">이벤트</a>
+                <button class="bg-gray-100 px-4 py-2 rounded-full text-sm font-bold text-gray-700 hover:bg-gray-200 transition">로그인</button>
             </nav>
         </div>
     </header>
@@ -51,82 +68,102 @@
     <main class="max-w-7xl mx-auto px-4 py-8 flex flex-col lg:flex-row gap-8">
         <!-- Sidebar Filters -->
         <aside class="w-full lg:w-1/4">
-            <form id="filterForm" class="filter-card p-6 space-y-6">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-xl font-bold">상세 필터</h2>
-                    <button type="button" onclick="resetFilters()" class="text-sm text-gray-400 hover:text-blue-500 underline">초기화</button>
+            <form id="filterForm" class="filter-card p-6 space-y-8 sticky top-24">
+                <div class="flex items-center justify-between border-b pb-4">
+                    <h2 class="text-lg font-bold flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        상세 필터
+                    </h2>
+                    <button type="button" onclick="resetFilters()" class="text-xs font-bold text-gray-400 hover:text-blue-600 flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        초기화
+                    </button>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-semibold mb-3">약정 기간</label>
-                    <div class="grid grid-cols-2 gap-2" id="contractGroup">
-                        <label class="flex items-center justify-center p-2 border rounded-lg cursor-pointer hover:bg-blue-50 transition border-gray-200">
-                            <input type="checkbox" class="hidden" name="contract" value="3년">
-                            <span class="text-sm">3년</span>
+                <!-- Brand Filter -->
+                <div class="space-y-4">
+                    <label class="block text-sm font-bold text-gray-700 uppercase tracking-wider">브랜드 선택</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="brand-chip flex items-center justify-center p-3 border rounded-xl cursor-pointer hover:border-blue-300 transition-all bg-gray-50 has-[:checked]:bg-blue-600 has-[:checked]:text-white has-[:checked]:border-blue-600">
+                            <input type="checkbox" name="brand" value="코웨이" class="hidden" onchange="fetchProducts()">
+                            <span class="text-xs font-bold">코웨이</span>
                         </label>
-                        <label class="flex items-center justify-center p-2 border rounded-lg cursor-pointer hover:bg-blue-50 transition border-gray-200">
-                            <input type="checkbox" class="hidden" name="contract" value="5년">
-                            <span class="text-sm">5년</span>
+                        <label class="brand-chip flex items-center justify-center p-3 border rounded-xl cursor-pointer hover:border-blue-300 transition-all bg-gray-50 has-[:checked]:bg-blue-600 has-[:checked]:text-white has-[:checked]:border-blue-600">
+                            <input type="checkbox" name="brand" value="SK매직" class="hidden" onchange="fetchProducts()">
+                            <span class="text-xs font-bold">SK매직</span>
                         </label>
-                        <label class="flex items-center justify-center p-2 border rounded-lg cursor-pointer hover:bg-blue-50 transition border-gray-200">
-                            <input type="checkbox" class="hidden" name="contract" value="6년">
-                            <span class="text-sm">6년</span>
+                        <label class="brand-chip flex items-center justify-center p-3 border rounded-xl cursor-pointer hover:border-blue-300 transition-all bg-gray-50 has-[:checked]:bg-blue-600 has-[:checked]:text-white has-[:checked]:border-blue-600">
+                            <input type="checkbox" name="brand" value="LG전자" class="hidden" onchange="fetchProducts()">
+                            <span class="text-xs font-bold">LG전자</span>
+                        </label>
+                        <label class="brand-chip flex items-center justify-center p-3 border rounded-xl cursor-pointer hover:border-blue-300 transition-all bg-gray-50 has-[:checked]:bg-blue-600 has-[:checked]:text-white has-[:checked]:border-blue-600">
+                            <input type="checkbox" name="brand" value="쿠쿠" class="hidden" onchange="fetchProducts()">
+                            <span class="text-xs font-bold">쿠쿠</span>
                         </label>
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-semibold mb-3">브랜드</label>
-                    <div class="space-y-2">
-                        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="brand" value="코웨이" class="w-4 h-4"> 코웨이</label>
-                        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="brand" value="SK매직" class="w-4 h-4"> SK매직</label>
-                        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="brand" value="LG전자" class="w-4 h-4"> LG전자</label>
-                        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="brand" value="쿠쿠" class="w-4 h-4"> 쿠쿠</label>
+                <!-- Price Filter -->
+                <div class="space-y-4 pt-4">
+                    <label class="block text-sm font-bold text-gray-700 uppercase tracking-wider">월 렌탈료 범위</label>
+                    <div class="space-y-3">
+                        <div class="relative">
+                            <input type="number" id="minPrice" placeholder="최소 금액" class="w-full bg-gray-50 border border-gray-200 p-3 pl-8 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                            <span class="absolute left-3 top-3.5 text-gray-400 text-xs">₩</span>
+                        </div>
+                        <div class="relative">
+                            <input type="number" id="maxPrice" placeholder="최대 금액" class="w-full bg-gray-50 border border-gray-200 p-3 pl-8 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                            <span class="absolute left-3 top-3.5 text-gray-400 text-xs">₩</span>
+                        </div>
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-semibold mb-3">월 렌탈료 (원)</label>
-                    <div class="flex items-center gap-2">
-                        <input type="number" id="minPrice" placeholder="최소" class="w-full border p-2 rounded text-sm outline-none focus:border-blue-500">
-                        <span>~</span>
-                        <input type="number" id="maxPrice" placeholder="최대" class="w-full border p-2 rounded text-sm outline-none focus:border-blue-500">
-                    </div>
-                </div>
-
-                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200">
-                    상품 검색하기
+                <button type="submit" class="w-full bg-gray-900 text-white py-4 rounded-2xl font-black text-lg hover:bg-blue-600 hover:shadow-xl hover:shadow-blue-200 transition-all active:scale-[0.98]">
+                    조건으로 상품 찾기
                 </button>
             </form>
         </aside>
 
         <!-- Product List Section -->
         <section class="w-full lg:w-3/4">
-            <div id="statusMessage" class="hidden mb-4 p-3 rounded-lg bg-yellow-50 text-yellow-700 text-sm border border-yellow-200"></div>
+            <div id="statusMessage" class="hidden mb-6 p-4 rounded-2xl bg-red-50 text-red-700 text-sm border border-red-100 flex items-center gap-3">
+                <svg class="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                <span id="statusText"></span>
+            </div>
             
-            <div class="flex items-center justify-between mb-6">
-                <p class="text-gray-600 font-medium">검색 결과: <span id="productCount" class="text-blue-600">0</span>개</p>
-                <select id="sortOrder" class="border rounded-lg px-3 py-1.5 text-sm bg-white outline-none" onchange="fetchProducts()">
-                    <option value="created_at">최신순</option>
-                    <option value="price_asc">낮은가격순</option>
-                    <option value="price_desc">높은가격순</option>
-                </select>
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+                <div>
+                    <h2 class="text-2xl font-black text-gray-900">추천 렌탈 리스트</h2>
+                    <p class="text-sm text-gray-500 font-medium">총 <span id="productCount" class="text-blue-600 font-bold">0</span>개의 맞춤 상품을 찾았습니다.</p>
+                </div>
+                <div class="flex items-center gap-2 bg-white p-1 rounded-xl shadow-sm border">
+                    <select id="sortOrder" class="bg-transparent pl-3 pr-8 py-2 text-sm font-bold text-gray-700 outline-none appearance-none cursor-pointer" onchange="fetchProducts()">
+                        <option value="created_at">최신 등록순</option>
+                        <option value="price_asc">낮은 렌탈료순</option>
+                        <option value="price_desc">높은 렌탈료순</option>
+                        <option value="benefit_desc">최대 혜택순</option>
+                    </select>
+                    <svg class="w-4 h-4 mr-2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
             </div>
 
-            <div id="productGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+            <div id="productGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                <!-- Skeletons will be injected here -->
+            </div>
 
-            <div id="noResults" class="hidden flex-col items-center justify-center py-20 text-gray-400">
-                <svg class="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>
-                <p class="text-lg font-medium">일치하는 상품이 없습니다.</p>
-                <p class="text-sm">필터를 조정하거나 초기화 후 다시 검색해 보세요.</p>
+            <div id="noResults" class="hidden flex-col items-center justify-center py-32 text-center">
+                <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                    <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <p class="text-xl font-bold text-gray-900">검색 결과가 없습니다.</p>
+                <p class="text-gray-500 mt-2">필터 조건을 완화하거나 초기화해 보세요.</p>
+                <button onclick="resetFilters()" class="mt-6 text-blue-600 font-bold border-b-2 border-blue-600 pb-1">모든 상품 보기</button>
             </div>
         </section>
     </main>
 
     <script>
-        // 1. Supabase 접속 정보 반영
+        // Supabase Configuration
         const SUPABASE_URL = 'https://sdxtxskdwyohlqqgglpj.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_JPCveUmMXhJrXd1vhkHBuQ_gDupA828'; 
 
@@ -134,29 +171,20 @@
 
         async function init() {
             try {
-                // 초기화 시 익명 로그인 수행
-                const { data: authData, error: authError } = await supabase.auth.signInAnonymously();
-                if (authError) throw authError;
-                
-                // 로그인 성공 후 자동으로 첫 검색 실행 (필터값 없음 -> 전체 리스트)
+                // Anonymous sign in for security policies
+                await supabase.auth.signInAnonymously();
                 await fetchProducts();
             } catch (err) {
                 console.error("Initialization error:", err);
-                showStatus("시스템 초기화 및 데이터 로드 중 오류가 발생했습니다. (" + err.message + ")");
+                showStatus("초기 로드 오류: " + err.message);
             }
         }
 
-        function showStatus(msg, isError = true) {
+        function showStatus(msg) {
             const el = document.getElementById('statusMessage');
-            el.innerText = msg;
+            const text = document.getElementById('statusText');
+            text.innerText = msg;
             el.classList.remove('hidden');
-            if (!isError) {
-                el.classList.remove('bg-yellow-50', 'text-yellow-700', 'border-yellow-200');
-                el.classList.add('bg-blue-50', 'text-blue-700', 'border-blue-200');
-            } else {
-                el.classList.remove('bg-blue-50', 'text-blue-700', 'border-blue-200');
-                el.classList.add('bg-yellow-50', 'text-yellow-700', 'border-yellow-200');
-            }
         }
 
         async function fetchProducts() {
@@ -165,15 +193,15 @@
             const noResults = document.getElementById('noResults');
             const statusMessage = document.getElementById('statusMessage');
 
-            // 1. 로딩 상태 표시 (스켈레톤 UI)
+            // 1. Show Loading State
             grid.innerHTML = Array(6).fill(0).map(() => `
-                <div class="bg-white border rounded-2xl overflow-hidden p-5 space-y-3">
-                    <div class="skeleton h-48 w-full rounded-xl"></div>
+                <div class="bg-white border border-gray-100 rounded-3xl p-5 space-y-4">
+                    <div class="skeleton h-52 w-full rounded-2xl"></div>
                     <div class="skeleton h-4 w-1/4"></div>
-                    <div class="skeleton h-6 w-3/4"></div>
+                    <div class="skeleton h-8 w-3/4"></div>
                     <div class="pt-4 border-t flex justify-between">
-                        <div class="skeleton h-8 w-1/3"></div>
-                        <div class="skeleton h-8 w-1/4"></div>
+                        <div class="skeleton h-10 w-1/3 rounded-lg"></div>
+                        <div class="skeleton h-10 w-1/4 rounded-lg"></div>
                     </div>
                 </div>
             `).join('');
@@ -181,71 +209,71 @@
             statusMessage.classList.add('hidden');
 
             try {
-                // 2. 필터 값 수집
+                // 2. Gather Filter Values
                 const brands = Array.from(document.querySelectorAll('input[name="brand"]:checked')).map(el => el.value);
-                const contracts = Array.from(document.querySelectorAll('input[name="contract"]:checked')).map(el => el.value);
                 const min = document.getElementById('minPrice').value;
                 const max = document.getElementById('maxPrice').value;
                 const sort = document.getElementById('sortOrder').value;
 
-                // 3. 쿼리 빌드
+                // 3. Build Query (Using table 'products')
                 let query = supabase.from('products').select('*', { count: 'exact' });
 
-                // 브랜드 필터
                 if (brands.length > 0) query = query.in('brand', brands);
-                
-                // 약정 기간 필터 (데이터베이스에 contract_period 컬럼이 있다고 가정)
-                if (contracts.length > 0) query = query.in('contract_period', contracts);
-                
-                // 가격 범위 필터
                 if (min) query = query.gte('monthly_fee', min);
                 if (max) query = query.lte('monthly_fee', max);
                 
-                // 정렬 로직
-                if (sort === 'price_asc') {
-                    query = query.order('monthly_fee', { ascending: true });
-                } else if (sort === 'price_desc') {
-                    query = query.order('monthly_fee', { ascending: false });
-                } else {
-                    query = query.order('created_at', { ascending: false });
-                }
+                // Sort Logic
+                if (sort === 'price_asc') query = query.order('monthly_fee', { ascending: true });
+                else if (sort === 'price_desc') query = query.order('monthly_fee', { ascending: false });
+                else if (sort === 'benefit_desc') query = query.order('benefit_amount', { ascending: false });
+                else query = query.order('created_at', { ascending: false });
 
-                // 4. 데이터 요청
                 const { data, error, count } = await query;
 
                 if (error) throw error;
 
-                // 5. 결과 반영
                 countLabel.innerText = count || 0;
                 
                 if (!data || data.length === 0) {
                     grid.innerHTML = '';
                     noResults.classList.remove('hidden');
                 } else {
-                    grid.innerHTML = data.map(p => `
-                        <div class="product-card bg-white border rounded-2xl overflow-hidden flex flex-col p-4 shadow-sm">
-                            <div class="bg-gray-50 h-48 rounded-xl flex items-center justify-center mb-4 overflow-hidden relative">
-                                <img src="${p.image_url || 'https://placehold.co/400x400?text=' + encodeURIComponent(p.name)}" 
+                    grid.innerHTML = data.map((p, index) => `
+                        <div class="product-card bg-white border border-gray-100 rounded-3xl overflow-hidden flex flex-col p-5 group shadow-sm" style="animation-delay: ${index * 100}ms">
+                            <div class="bg-gray-50 h-56 rounded-2xl flex items-center justify-center mb-5 overflow-hidden relative">
+                                <img src="${p.image_url || 'https://placehold.co/600x600?text=' + encodeURIComponent(p.name)}" 
                                      alt="${p.name}"
-                                     class="max-h-full max-w-full object-contain hover:scale-105 transition-transform duration-300"
-                                     onerror="this.src='https://placehold.co/400x400?text=No+Image'">
-                                ${p.is_best ? '<span class="absolute top-2 left-2 bg-blue-600 text-white text-[10px] px-2 py-1 rounded-full font-bold">BEST</span>' : ''}
+                                     class="max-h-[80%] max-w-[80%] object-contain group-hover:scale-110 transition-transform duration-500"
+                                     onerror="this.src='https://placehold.co/600x600?text=Product'">
+                                ${p.is_best ? '<span class="absolute top-3 left-3 bg-red-500 text-white text-[10px] px-3 py-1 rounded-full font-black shadow-lg shadow-red-200">HIT</span>' : ''}
+                                <button class="absolute top-3 right-3 p-2 bg-white/80 backdrop-blur rounded-full text-gray-300 hover:text-red-500 transition shadow-sm">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"></path></svg>
+                                </button>
                             </div>
                             <div class="flex-1 flex flex-col">
-                                <div class="mb-2">
-                                    <p class="text-xs text-blue-600 font-bold uppercase tracking-wider">${p.brand}</p>
-                                    <h3 class="font-bold text-lg text-gray-900 leading-tight h-14 overflow-hidden line-clamp-2">${p.name}</h3>
-                                    <p class="text-xs text-gray-400 mt-1">${p.contract_period || '기간 정보 없음'}</p>
+                                <div class="mb-4">
+                                    <p class="text-[10px] text-blue-600 font-black uppercase tracking-widest mb-1">${p.brand}</p>
+                                    <h3 class="font-bold text-lg text-gray-900 leading-snug line-clamp-2 h-[3.5rem]">${p.name}</h3>
+                                    <div class="flex flex-wrap gap-1 mt-2">
+                                        <span class="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded font-bold">${p.contract_period || '자유약정'}</span>
+                                        ${p.benefit_amount > 0 ? `<span class="text-[10px] bg-orange-50 text-orange-600 px-2 py-0.5 rounded font-bold">제휴카드 할인</span>` : ''}
+                                    </div>
                                 </div>
-                                <div class="mt-auto border-t pt-4 flex items-end justify-between">
-                                    <div>
-                                        <p class="text-[10px] text-gray-400 font-medium">월 렌탈료</p>
-                                        <span class="text-xl font-black text-gray-900">${Number(p.monthly_fee || 0).toLocaleString()}원</span>
+                                <div class="mt-auto pt-5 border-t flex flex-col gap-4">
+                                    <div class="flex items-end justify-between">
+                                        <div>
+                                            <p class="text-[10px] text-gray-400 font-bold">월 렌탈료</p>
+                                            <span class="text-2xl font-black text-gray-900">${Number(p.monthly_fee || 0).toLocaleString()}<span class="text-sm font-bold ml-1">원</span></span>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-[10px] text-orange-500 font-black tracking-tighter">최대 현금 지원</p>
+                                            <span class="text-lg font-black text-orange-600">${p.benefit_amount || 0}만<span class="text-xs">원</span></span>
+                                        </div>
                                     </div>
-                                    <div class="text-right">
-                                        <p class="text-[10px] text-orange-500 font-bold">최대 혜택</p>
-                                        <span class="text-sm font-bold text-orange-600">${p.benefit_amount || 0}만원</span>
-                                    </div>
+                                    <button onclick="window.location.href='#'" class="w-full bg-blue-50 text-blue-700 py-3 rounded-xl font-bold hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center gap-2 group/btn">
+                                        상담 신청하기
+                                        <svg class="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -253,45 +281,34 @@
                 }
             } catch (err) {
                 console.error("Fetch error:", err);
-                showStatus(`데이터 조회 실패: ${err.message}. 테이블명('products')이나 컬럼명을 다시 확인해주세요.`);
+                showStatus("데이터를 불러오는 중 문제가 발생했습니다: " + err.message);
                 grid.innerHTML = '';
-                countLabel.innerText = '0';
             }
         }
 
-        // 필터 체크박스 시각 효과 (약정 기간 버튼형 체크박스 전용)
-        document.querySelectorAll('input[name="contract"]').forEach(input => {
-            input.addEventListener('change', function() {
-                const label = this.parentElement;
-                if (this.checked) {
-                    label.classList.replace('border-gray-200', 'border-blue-600');
-                    label.classList.add('bg-blue-600', 'text-white');
-                } else {
-                    label.classList.replace('border-blue-600', 'border-gray-200');
-                    label.classList.remove('bg-blue-600', 'text-white');
-                }
+        // Live filtering for price inputs (debounced)
+        let debounceTimer;
+        [document.getElementById('minPrice'), document.getElementById('maxPrice')].forEach(input => {
+            input.addEventListener('input', () => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(fetchProducts, 500);
             });
         });
 
-        // 폼 제출 이벤트 (검색 버튼 클릭 시)
+        // Form Submit
         document.getElementById('filterForm').addEventListener('submit', (e) => {
             e.preventDefault();
             fetchProducts();
         });
 
-        // 필터 초기화 함수
+        // Reset All
         function resetFilters() {
             document.getElementById('filterForm').reset();
-            // 버튼형 체크박스 스타일 초기화
-            document.querySelectorAll('#contractGroup label').forEach(l => {
-                l.classList.remove('border-blue-600', 'bg-blue-600', 'text-white');
-                l.classList.add('border-gray-200');
-            });
             fetchProducts();
         }
 
-        // 페이지 로드 시 실행
-        window.onload = init;
+        // Run on Load
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
