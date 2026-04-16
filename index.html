@@ -109,6 +109,7 @@
                 <select id="sortOrder" class="border rounded-lg px-3 py-1.5 text-sm bg-white outline-none" onchange="fetchProducts()">
                     <option value="created_at">최신순</option>
                     <option value="price_asc">낮은가격순</option>
+                    <option value="price_desc">높은가격순</option>
                 </select>
             </div>
 
@@ -118,7 +119,8 @@
                 <svg class="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                 </svg>
-                <p>일치하는 상품이 없거나 연결 설정이 필요합니다.</p>
+                <p class="text-lg font-medium">일치하는 상품이 없습니다.</p>
+                <p class="text-sm">필터를 조정하거나 초기화 후 다시 검색해 보세요.</p>
             </div>
         </section>
     </main>
@@ -132,12 +134,15 @@
 
         async function init() {
             try {
-                // RLS(Row Level Security) 설정에 따라 익명 세션이 필요할 수 있습니다.
-                await supabase.auth.signInAnonymously();
+                // 초기화 시 익명 로그인 수행
+                const { data: authData, error: authError } = await supabase.auth.signInAnonymously();
+                if (authError) throw authError;
+                
+                // 로그인 성공 후 자동으로 첫 검색 실행 (필터값 없음 -> 전체 리스트)
                 await fetchProducts();
             } catch (err) {
                 console.error("Initialization error:", err);
-                showStatus("시스템 초기화 중 오류가 발생했습니다.");
+                showStatus("시스템 초기화 및 데이터 로드 중 오류가 발생했습니다. (" + err.message + ")");
             }
         }
 
@@ -146,8 +151,11 @@
             el.innerText = msg;
             el.classList.remove('hidden');
             if (!isError) {
-                el.classList.replace('bg-yellow-50', 'bg-blue-50');
-                el.classList.replace('text-yellow-700', 'text-blue-700');
+                el.classList.remove('bg-yellow-50', 'text-yellow-700', 'border-yellow-200');
+                el.classList.add('bg-blue-50', 'text-blue-700', 'border-blue-200');
+            } else {
+                el.classList.remove('bg-blue-50', 'text-blue-700', 'border-blue-200');
+                el.classList.add('bg-yellow-50', 'text-yellow-700', 'border-yellow-200');
             }
         }
 
@@ -157,38 +165,57 @@
             const noResults = document.getElementById('noResults');
             const statusMessage = document.getElementById('statusMessage');
 
-            // 로딩 표시
-            grid.innerHTML = Array(3).fill(0).map(() => `
+            // 1. 로딩 상태 표시 (스켈레톤 UI)
+            grid.innerHTML = Array(6).fill(0).map(() => `
                 <div class="bg-white border rounded-2xl overflow-hidden p-5 space-y-3">
                     <div class="skeleton h-48 w-full rounded-xl"></div>
                     <div class="skeleton h-4 w-1/4"></div>
                     <div class="skeleton h-6 w-3/4"></div>
+                    <div class="pt-4 border-t flex justify-between">
+                        <div class="skeleton h-8 w-1/3"></div>
+                        <div class="skeleton h-8 w-1/4"></div>
+                    </div>
                 </div>
             `).join('');
             noResults.classList.add('hidden');
             statusMessage.classList.add('hidden');
 
             try {
+                // 2. 필터 값 수집
                 const brands = Array.from(document.querySelectorAll('input[name="brand"]:checked')).map(el => el.value);
+                const contracts = Array.from(document.querySelectorAll('input[name="contract"]:checked')).map(el => el.value);
                 const min = document.getElementById('minPrice').value;
                 const max = document.getElementById('maxPrice').value;
                 const sort = document.getElementById('sortOrder').value;
 
-                // 쿼리 시작 (테이블명이 'products'라고 가정)
+                // 3. 쿼리 빌드
                 let query = supabase.from('products').select('*', { count: 'exact' });
 
+                // 브랜드 필터
                 if (brands.length > 0) query = query.in('brand', brands);
+                
+                // 약정 기간 필터 (데이터베이스에 contract_period 컬럼이 있다고 가정)
+                if (contracts.length > 0) query = query.in('contract_period', contracts);
+                
+                // 가격 범위 필터
                 if (min) query = query.gte('monthly_fee', min);
                 if (max) query = query.lte('monthly_fee', max);
                 
-                // 정렬
-                if (sort === 'price_asc') query = query.order('monthly_fee', { ascending: true });
-                else query = query.order('created_at', { ascending: false });
+                // 정렬 로직
+                if (sort === 'price_asc') {
+                    query = query.order('monthly_fee', { ascending: true });
+                } else if (sort === 'price_desc') {
+                    query = query.order('monthly_fee', { ascending: false });
+                } else {
+                    query = query.order('created_at', { ascending: false });
+                }
 
+                // 4. 데이터 요청
                 const { data, error, count } = await query;
 
                 if (error) throw error;
 
+                // 5. 결과 반영
                 countLabel.innerText = count || 0;
                 
                 if (!data || data.length === 0) {
@@ -197,16 +224,18 @@
                 } else {
                     grid.innerHTML = data.map(p => `
                         <div class="product-card bg-white border rounded-2xl overflow-hidden flex flex-col p-4 shadow-sm">
-                            <div class="bg-gray-50 h-48 rounded-xl flex items-center justify-center mb-4 overflow-hidden">
+                            <div class="bg-gray-50 h-48 rounded-xl flex items-center justify-center mb-4 overflow-hidden relative">
                                 <img src="${p.image_url || 'https://placehold.co/400x400?text=' + encodeURIComponent(p.name)}" 
                                      alt="${p.name}"
                                      class="max-h-full max-w-full object-contain hover:scale-105 transition-transform duration-300"
                                      onerror="this.src='https://placehold.co/400x400?text=No+Image'">
+                                ${p.is_best ? '<span class="absolute top-2 left-2 bg-blue-600 text-white text-[10px] px-2 py-1 rounded-full font-bold">BEST</span>' : ''}
                             </div>
                             <div class="flex-1 flex flex-col">
                                 <div class="mb-2">
                                     <p class="text-xs text-blue-600 font-bold uppercase tracking-wider">${p.brand}</p>
-                                    <h3 class="font-bold text-lg text-gray-900 leading-tight">${p.name}</h3>
+                                    <h3 class="font-bold text-lg text-gray-900 leading-tight h-14 overflow-hidden line-clamp-2">${p.name}</h3>
+                                    <p class="text-xs text-gray-400 mt-1">${p.contract_period || '기간 정보 없음'}</p>
                                 </div>
                                 <div class="mt-auto border-t pt-4 flex items-end justify-between">
                                     <div>
@@ -224,13 +253,13 @@
                 }
             } catch (err) {
                 console.error("Fetch error:", err);
-                showStatus(`데이터 조회 실패: ${err.message}. 테이블 'products'가 있는지 확인해주세요.`);
+                showStatus(`데이터 조회 실패: ${err.message}. 테이블명('products')이나 컬럼명을 다시 확인해주세요.`);
                 grid.innerHTML = '';
                 countLabel.innerText = '0';
             }
         }
 
-        // 필터 시각 효과 처리
+        // 필터 체크박스 시각 효과 (약정 기간 버튼형 체크박스 전용)
         document.querySelectorAll('input[name="contract"]').forEach(input => {
             input.addEventListener('change', function() {
                 const label = this.parentElement;
@@ -244,24 +273,25 @@
             });
         });
 
-        // 폼 제출 이벤트
+        // 폼 제출 이벤트 (검색 버튼 클릭 시)
         document.getElementById('filterForm').addEventListener('submit', (e) => {
             e.preventDefault();
             fetchProducts();
         });
 
-        // 필터 초기화
+        // 필터 초기화 함수
         function resetFilters() {
             document.getElementById('filterForm').reset();
+            // 버튼형 체크박스 스타일 초기화
             document.querySelectorAll('#contractGroup label').forEach(l => {
-                l.classList.replace('border-blue-600', 'border-gray-200');
-                l.classList.remove('bg-blue-600', 'text-white');
+                l.classList.remove('border-blue-600', 'bg-blue-600', 'text-white');
+                l.classList.add('border-gray-200');
             });
             fetchProducts();
         }
 
-        // 실행
-        init();
+        // 페이지 로드 시 실행
+        window.onload = init;
     </script>
 </body>
 </html>
