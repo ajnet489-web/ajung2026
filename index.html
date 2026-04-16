@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>렌탈 상품 스마트 조회</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8fafc;
+        }
+        .filter-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .product-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Header -->
+    <header class="bg-white border-b sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <h1 class="text-2xl font-bold text-blue-600">RentalHub</h1>
+            <nav class="hidden md:flex space-x-8 font-medium">
+                <a href="#" class="hover:text-blue-500">정수기</a>
+                <a href="#" class="hover:text-blue-500">공기청정기</a>
+                <a href="#" class="hover:text-blue-500">비데/매트리스</a>
+                <a href="#" class="hover:text-blue-500 text-gray-400">마이페이지</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 flex flex-col lg:flex-row gap-8">
+        
+        <!-- Sidebar Filters -->
+        <aside class="w-full lg:w-1/4">
+            <form id="filterForm" class="filter-card p-6 space-y-6">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-bold">상세 필터</h2>
+                    <button type="button" onclick="resetFilters()" class="text-sm text-gray-400 hover:text-blue-500 underline">초기화</button>
+                </div>
+
+                <!-- 약정 기간 -->
+                <div>
+                    <label class="block text-sm font-semibold mb-3">약정 기간</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center justify-center p-2 border rounded-lg cursor-pointer hover:bg-blue-50 transition">
+                            <input type="checkbox" class="hidden" name="contract" value="3년">
+                            <span class="text-sm">3년</span>
+                        </label>
+                        <label class="flex items-center justify-center p-2 border rounded-lg cursor-pointer hover:bg-blue-50 transition">
+                            <input type="checkbox" class="hidden" name="contract" value="5년">
+                            <span class="text-sm">5년</span>
+                        </label>
+                        <label class="flex items-center justify-center p-2 border rounded-lg cursor-pointer hover:bg-blue-50 transition">
+                            <input type="checkbox" class="hidden" name="contract" value="6년">
+                            <span class="text-sm">6년</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 브랜드 -->
+                <div>
+                    <label class="block text-sm font-semibold mb-3">브랜드</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center gap-2 text-sm">
+                            <input type="checkbox" name="brand" value="코웨이" class="w-4 h-4 rounded"> 코웨이
+                        </label>
+                        <label class="flex items-center gap-2 text-sm">
+                            <input type="checkbox" name="brand" value="SK매직" class="w-4 h-4 rounded"> SK매직
+                        </label>
+                        <label class="flex items-center gap-2 text-sm">
+                            <input type="checkbox" name="brand" value="LG전자" class="w-4 h-4 rounded"> LG전자
+                        </label>
+                        <label class="flex items-center gap-2 text-sm">
+                            <input type="checkbox" name="brand" value="쿠쿠" class="w-4 h-4 rounded"> 쿠쿠
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 기능 -->
+                <div>
+                    <label class="block text-sm font-semibold mb-3">기능</label>
+                    <div class="space-y-2 text-sm">
+                        <label class="flex items-center gap-2"><input type="checkbox" name="feature" value="냉정" class="w-4 h-4"> 냉정수기</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" name="feature" value="냉온정" class="w-4 h-4"> 냉온정수기</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" name="feature" value="얼음" class="w-4 h-4"> 얼음정수기</label>
+                    </div>
+                </div>
+
+                <!-- 요금 범위 -->
+                <div>
+                    <label class="block text-sm font-semibold mb-3">월 렌탈료 (원)</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="minPrice" placeholder="최소" class="w-full border p-2 rounded text-sm focus:ring-1 focus:ring-blue-500 outline-none">
+                        <span>~</span>
+                        <input type="number" id="maxPrice" placeholder="최대" class="w-full border p-2 rounded text-sm focus:ring-1 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200">
+                    상품 검색하기
+                </button>
+            </form>
+        </aside>
+
+        <!-- Product List Section -->
+        <section class="w-full lg:w-3/4">
+            <div class="flex items-center justify-between mb-6">
+                <p class="text-gray-600 font-medium">검색 결과: <span id="productCount" class="text-blue-600">0</span>개</p>
+                <div class="flex gap-2">
+                    <select id="sortOrder" class="border rounded-lg px-3 py-1.5 text-sm bg-white outline-none" onchange="fetchProducts()">
+                        <option value="created_at">최신순</option>
+                        <option value="price_asc">낮은가격순</option>
+                        <option value="benefit_desc">혜택높은순</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div id="productGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <!-- JavaScript가 여기에 상품을 렌더링합니다 -->
+            </div>
+
+            <!-- No Results -->
+            <div id="noResults" class="hidden flex-col items-center justify-center py-20 text-gray-400">
+                <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <p>일치하는 상품이 없습니다. 필터를 변경해보세요.</p>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Supabase 설정
+        // 실제 운영 환경에서는 환경 변수를 사용해야 하며, 여기서는 API 연동 로직 구조를 보여줍니다.
+        const SUPABASE_URL = 'https://sdxtxskdwyohlqqgglpj.supabase.co';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'; // 여기에 실제 ANON KEY를 입력해야 작동합니다.
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // 페이지 로드 시 초기 데이터 로드
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchProducts();
+            
+            // 필터 폼 제출 이벤트
+            document.getElementById('filterForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                fetchProducts();
+            });
+        });
+
+        // 상품 데이터 가져오기
+        async function fetchProducts() {
+            const grid = document.getElementById('productGrid');
+            const countLabel = document.getElementById('productCount');
+            const noResults = document.getElementById('noResults');
+
+            // 1. 로딩 상태 표시 (스켈레톤)
+            grid.innerHTML = Array(6).fill(0).map(() => `
+                <div class="bg-white border rounded-2xl overflow-hidden">
+                    <div class="skeleton aspect-square"></div>
+                    <div class="p-5 space-y-3">
+                        <div class="skeleton h-4 w-1/4"></div>
+                        <div class="skeleton h-6 w-3/4"></div>
+                        <div class="skeleton h-4 w-full"></div>
+                        <div class="skeleton h-10 w-full mt-4"></div>
+                    </div>
+                </div>
+            `).join('');
+            noResults.classList.add('hidden');
+
+            try {
+                // 2. 필터 값 수집
+                const selectedBrands = Array.from(document.querySelectorAll('input[name="brand"]:checked')).map(el => el.value);
+                const selectedContracts = Array.from(document.querySelectorAll('input[name="contract"]:checked')).map(el => el.value);
+                const minPrice = document.getElementById('minPrice').value;
+                const maxPrice = document.getElementById('maxPrice').value;
+                const sortOrder = document.getElementById('sortOrder').value;
+
+                // 3. Supabase 쿼리 빌드
+                let query = supabase.from('products').select('*');
+
+                if (selectedBrands.length > 0) query = query.in('brand', selectedBrands);
+                if (selectedContracts.length > 0) query = query.containedBy('contract_options', selectedContracts);
+                if (minPrice) query = query.gte('monthly_fee', minPrice);
+                if (maxPrice) query = query.lte('monthly_fee', maxPrice);
+
+                // 정렬 적용
+                if (sortOrder === 'price_asc') query = query.order('monthly_fee', { ascending: true });
+                else if (sortOrder === 'benefit_desc') query = query.order('benefit_amount', { ascending: false });
+                else query = query.order('created_at', { ascending: false });
+
+                const { data, error } = await query;
+
+                if (error) throw error;
+
+                // 4. 결과 렌더링
+                countLabel.innerText = data.length;
+                
+                if (data.length === 0) {
+                    grid.innerHTML = '';
+                    noResults.classList.remove('hidden');
+                    return;
+                }
+
+                grid.innerHTML = data.map(product => `
+                    <div class="product-card bg-white border rounded-2xl overflow-hidden flex flex-col">
+                        <div class="bg-gray-100 aspect-square flex items-center justify-center p-8 relative">
+                            ${product.is_best ? '<div class="absolute top-3 left-3 bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-bold">BEST</div>' : ''}
+                            <img src="${product.image_url || 'https://placehold.co/400x400?text=' + product.name}" 
+                                 alt="${product.name}" 
+                                 class="w-full h-full object-contain"
+                                 onerror="this.src='https://placehold.co/400x400?text=No+Image'">
+                        </div>
+                        <div class="p-5 flex-1 flex flex-col">
+                            <p class="text-xs text-blue-600 font-bold mb-1">${product.brand}</p>
+                            <h3 class="font-bold text-lg mb-2 leading-tight">${product.name}</h3>
+                            <div class="flex flex-wrap gap-1 mb-4">
+                                ${(product.tags || []).map(tag => `<span class="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">${tag}</span>`).join('')}
+                            </div>
+                            <div class="flex items-end justify-between border-t pt-4 mt-auto">
+                                <div>
+                                    <p class="text-[10px] text-gray-400">월 렌탈료</p>
+                                    <span class="text-xl font-black text-gray-900">${Number(product.monthly_fee).toLocaleString()}원</span>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[10px] text-orange-500 font-bold">사은품 혜택</p>
+                                    <span class="text-sm font-bold text-orange-600">최대 ${product.benefit_amount}만원</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (err) {
+                console.error('Data Fetch Error:', err);
+                grid.innerHTML = `<div class="col-span-full py-10 text-center text-red-500">데이터를 불러오는 중 오류가 발생했습니다.</div>`;
+            }
+        }
+
+        // 약정기간 체크박스 비주얼 토글 보완
+        document.querySelectorAll('input[name="contract"]').forEach(input => {
+            input.addEventListener('change', function() {
+                const label = this.parentElement;
+                if (this.checked) {
+                    label.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+                } else {
+                    label.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+                }
+            });
+        });
+
+        function resetFilters() {
+            document.getElementById('filterForm').reset();
+            document.querySelectorAll('input[name="contract"]').forEach(input => {
+                input.parentElement.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+            });
+            fetchProducts();
+        }
+    </script>
+</body>
+</html>
