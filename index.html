@@ -54,26 +54,26 @@
             <form id="filterForm" class="filter-section p-8 space-y-8 sticky top-10">
                 <div class="flex items-center justify-between border-b pb-4">
                     <h2 class="text-lg font-bold">상세 조건</h2>
-                    <button type="button" onclick="resetFilters()" class="text-xs font-bold text-slate-400 hover:text-indigo-600">초기화</button>
+                    <button type="button" id="btnReset" class="text-xs font-bold text-slate-400 hover:text-indigo-600">초기화</button>
                 </div>
 
                 <div class="space-y-4">
                     <label class="block text-xs font-black text-slate-400 uppercase tracking-widest">브랜드 선택</label>
                     <div class="grid grid-cols-2 gap-2">
                         <label class="flex items-center justify-center p-3 border-2 border-slate-100 rounded-xl cursor-pointer hover:border-indigo-200 transition-all has-[:checked]:bg-indigo-600 has-[:checked]:text-white has-[:checked]:border-indigo-600">
-                            <input type="checkbox" name="brand" value="코웨이" class="hidden" onchange="fetchProducts()">
+                            <input type="checkbox" name="brand" value="코웨이" class="hidden brand-checkbox">
                             <span class="text-xs font-bold">코웨이</span>
                         </label>
                         <label class="flex items-center justify-center p-3 border-2 border-slate-100 rounded-xl cursor-pointer hover:border-indigo-200 transition-all has-[:checked]:bg-indigo-600 has-[:checked]:text-white has-[:checked]:border-indigo-600">
-                            <input type="checkbox" name="brand" value="SK매직" class="hidden" onchange="fetchProducts()">
+                            <input type="checkbox" name="brand" value="SK매직" class="hidden brand-checkbox">
                             <span class="text-xs font-bold">SK매직</span>
                         </label>
                         <label class="flex items-center justify-center p-3 border-2 border-slate-100 rounded-xl cursor-pointer hover:border-indigo-200 transition-all has-[:checked]:bg-indigo-600 has-[:checked]:text-white has-[:checked]:border-indigo-600">
-                            <input type="checkbox" name="brand" value="LG전자" class="hidden" onchange="fetchProducts()">
+                            <input type="checkbox" name="brand" value="LG전자" class="hidden brand-checkbox">
                             <span class="text-xs font-bold">LG전자</span>
                         </label>
                         <label class="flex items-center justify-center p-3 border-2 border-slate-100 rounded-xl cursor-pointer hover:border-indigo-200 transition-all has-[:checked]:bg-indigo-600 has-[:checked]:text-white has-[:checked]:border-indigo-600">
-                            <input type="checkbox" name="brand" value="쿠쿠" class="hidden" onchange="fetchProducts()">
+                            <input type="checkbox" name="brand" value="쿠쿠" class="hidden brand-checkbox">
                             <span class="text-xs font-bold">쿠쿠</span>
                         </label>
                     </div>
@@ -82,9 +82,9 @@
                 <div class="space-y-4">
                     <label class="block text-xs font-black text-slate-400 uppercase tracking-widest">월 렌탈료 범위</label>
                     <div class="flex items-center gap-2">
-                        <input type="number" id="minPrice" placeholder="0" class="w-full bg-slate-50 border p-3 rounded-xl text-sm focus:border-indigo-500 outline-none" oninput="fetchProducts()">
+                        <input type="number" id="minPrice" placeholder="0" class="w-full bg-slate-50 border p-3 rounded-xl text-sm focus:border-indigo-500 outline-none price-input">
                         <span class="text-slate-300">~</span>
-                        <input type="number" id="maxPrice" placeholder="최대" class="w-full bg-slate-50 border p-3 rounded-xl text-sm focus:border-indigo-500 outline-none" oninput="fetchProducts()">
+                        <input type="number" id="maxPrice" placeholder="최대" class="w-full bg-slate-50 border p-3 rounded-xl text-sm focus:border-indigo-500 outline-none price-input">
                     </div>
                 </div>
 
@@ -104,14 +104,14 @@
                 
                 <div class="flex items-center gap-2">
                     <div class="flex items-center bg-white p-1 rounded-xl shadow-sm border border-slate-200">
-                        <button onclick="setView('card')" id="btnCard" class="p-2 rounded-lg bg-indigo-600 text-white transition-all">
+                        <button id="btnCardView" class="p-2 rounded-lg bg-indigo-600 text-white transition-all">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
                         </button>
-                        <button onclick="setView('table')" id="btnTable" class="p-2 rounded-lg text-slate-400 transition-all">
+                        <button id="btnTableView" class="p-2 rounded-lg text-slate-400 transition-all">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
                         </button>
                     </div>
-                    <select id="sortOrder" class="bg-white border rounded-xl px-3 py-2 text-xs font-bold outline-none" onchange="fetchProducts()">
+                    <select id="sortOrder" class="bg-white border rounded-xl px-3 py-2 text-xs font-bold outline-none">
                         <option value="created_at">최신순</option>
                         <option value="price_asc">가격 낮은순</option>
                         <option value="price_desc">가격 높은순</option>
@@ -139,153 +139,170 @@
             <div id="noResults" class="hidden flex flex-col items-center justify-center py-40 text-slate-400">
                 <svg class="w-12 h-12 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 <p class="font-bold text-lg">해당 조건의 상품을 찾을 수 없습니다.</p>
-                <button onclick="resetFilters()" class="mt-2 text-indigo-600 underline text-sm">모든 상품 다시 보기</button>
+                <button type="button" id="btnShowAll" class="mt-2 text-indigo-600 underline text-sm">모든 상품 다시 보기</button>
             </div>
         </section>
     </main>
 
     <script>
-        const SUPABASE_URL = 'https://sdxtxskdwyohlqqgglpj.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_JPCveUmMXhJrXd1vhkHBuQ_gDupA828'; 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // 전역 범위 오염 방지를 위한 즉시 실행 함수 처리 및 중복 선언 체크
+        (function() {
+            const SUPABASE_URL = 'https://sdxtxskdwyohlqqgglpj.supabase.co';
+            const SUPABASE_ANON_KEY = 'sb_publishable_JPCveUmMXhJrXd1vhkHBuQ_gDupA828'; 
+            
+            // 전역에 이미 선언되어 있는지 확인
+            if (window.rentalAppInitialized) return;
+            window.rentalAppInitialized = true;
 
-        let currentView = 'card';
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            let currentView = 'card';
 
-        // 뷰 전환 함수
-        function setView(view) {
-            currentView = view;
-            const grid = document.getElementById('productGrid');
-            const table = document.getElementById('productTableWrapper');
-            const btnCard = document.getElementById('btnCard');
-            const btnTable = document.getElementById('btnTable');
+            // 뷰 전환 함수
+            function setView(view) {
+                currentView = view;
+                const grid = document.getElementById('productGrid');
+                const table = document.getElementById('productTableWrapper');
+                const btnCard = document.getElementById('btnCardView');
+                const btnTable = document.getElementById('btnTableView');
 
-            if (view === 'card') {
-                grid.classList.remove('hidden');
-                table.classList.add('hidden');
-                btnCard.classList.add('bg-indigo-600', 'text-white');
-                btnTable.classList.remove('bg-indigo-600', 'text-white');
-                btnTable.classList.add('text-slate-400');
-            } else {
-                grid.classList.add('hidden');
-                table.classList.remove('hidden');
-                btnTable.classList.add('bg-indigo-600', 'text-white');
-                btnCard.classList.remove('bg-indigo-600', 'text-white');
-                btnCard.classList.add('text-slate-400');
-            }
-        }
-
-        async function init() {
-            try {
-                await supabase.auth.signInAnonymously();
-                // 아무 조건 없이 초기 실행 -> 모든 리스트 자동 로드
-                await fetchProducts();
-            } catch (err) {
-                console.error(err);
-                showStatus("데이터 연결 오류가 발생했습니다.");
-            }
-        }
-
-        function showStatus(msg) {
-            const el = document.getElementById('statusMessage');
-            el.innerText = msg;
-            el.classList.remove('hidden');
-        }
-
-        async function fetchProducts() {
-            const grid = document.getElementById('productGrid');
-            const tableBody = document.getElementById('productTableBody');
-            const countLabel = document.getElementById('productCount');
-            const noResults = document.getElementById('noResults');
-
-            // 로딩 스켈레톤
-            grid.innerHTML = Array(6).fill(0).map(() => `<div class="skeleton h-64 rounded-2xl"></div>`).join('');
-            tableBody.innerHTML = '';
-
-            try {
-                const brands = Array.from(document.querySelectorAll('input[name="brand"]:checked')).map(el => el.value);
-                const min = document.getElementById('minPrice').value;
-                const max = document.getElementById('maxPrice').value;
-                const sort = document.getElementById('sortOrder').value;
-
-                let query = supabase.from('products').select('*', { count: 'exact' });
-
-                // 필터링 적용 (값이 있는 경우에만)
-                if (brands.length > 0) query = query.in('brand', brands);
-                if (min) query = query.gte('monthly_fee', min);
-                if (max) query = query.lte('monthly_fee', max);
-                
-                // 정렬 적용
-                if (sort === 'price_asc') query = query.order('monthly_fee', { ascending: true });
-                else if (sort === 'price_desc') query = query.order('monthly_fee', { ascending: false });
-                else query = query.order('created_at', { ascending: false });
-
-                const { data, error, count } = await query;
-                if (error) throw error;
-
-                countLabel.innerText = count || 0;
-                
-                if (!data || data.length === 0) {
-                    grid.innerHTML = '';
-                    noResults.classList.remove('hidden');
+                if (view === 'card') {
+                    grid.classList.remove('hidden');
+                    table.classList.add('hidden');
+                    btnCard.classList.add('bg-indigo-600', 'text-white');
+                    btnCard.classList.remove('text-slate-400');
+                    btnTable.classList.remove('bg-indigo-600', 'text-white');
+                    btnTable.classList.add('text-slate-400');
                 } else {
-                    noResults.classList.add('hidden');
-                    
-                    // 카드형 렌더링
-                    grid.innerHTML = data.map(p => `
-                        <div class="bg-white border border-slate-100 rounded-3xl p-5 hover:shadow-xl hover:shadow-indigo-100 transition-all flex flex-col">
-                            <div class="h-40 bg-slate-50 rounded-2xl mb-4 flex items-center justify-center overflow-hidden">
-                                <img src="${p.image_url || 'https://placehold.co/400x400?text=' + encodeURIComponent(p.name)}" 
-                                     class="max-h-[80%] object-contain"
-                                     onerror="this.src='https://placehold.co/400x400?text=Rental'">
-                            </div>
-                            <p class="text-[10px] font-black text-indigo-600 mb-1 tracking-widest uppercase">${p.brand}</p>
-                            <h4 class="font-bold text-slate-900 leading-tight mb-4 flex-1">${p.name}</h4>
-                            <div class="flex items-end justify-between border-t pt-4">
-                                <div>
-                                    <p class="text-[10px] text-slate-400 font-bold uppercase">월 렌탈료</p>
-                                    <span class="text-xl font-black">${Number(p.monthly_fee).toLocaleString()}원</span>
-                                </div>
-                                <div class="text-right">
-                                    <span class="text-xs font-bold text-rose-500">${p.benefit_amount}만 혜택</span>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('');
-
-                    // 표형 렌더링
-                    tableBody.innerHTML = data.map(p => `
-                        <tr class="hover:bg-indigo-50/30 transition-colors">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <img src="${p.image_url || 'https://placehold.co/50'}" class="w-10 h-10 object-contain bg-slate-50 rounded-lg">
-                                    <span class="font-bold text-sm">${p.name}</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4"><span class="text-xs font-bold bg-indigo-50 text-indigo-600 px-2 py-1 rounded-md">${p.brand}</span></td>
-                            <td class="px-6 py-4 font-bold text-sm">${Number(p.monthly_fee).toLocaleString()}원</td>
-                            <td class="px-6 py-4 font-bold text-rose-500 text-sm">${p.benefit_amount}만원</td>
-                            <td class="px-6 py-4 text-center">
-                                <button class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-indigo-600 transition-all">문의</button>
-                            </td>
-                        </tr>
-                    `).join('');
+                    grid.classList.add('hidden');
+                    table.classList.remove('hidden');
+                    btnTable.classList.add('bg-indigo-600', 'text-white');
+                    btnTable.classList.remove('text-slate-400');
+                    btnCard.classList.remove('bg-indigo-600', 'text-white');
+                    btnCard.classList.add('text-slate-400');
                 }
-            } catch (err) {
-                showStatus("데이터 조회 실패: " + err.message);
             }
-        }
 
-        function resetFilters() {
-            document.getElementById('filterForm').reset();
-            fetchProducts();
-        }
+            async function fetchProducts() {
+                const grid = document.getElementById('productGrid');
+                const tableBody = document.getElementById('productTableBody');
+                const countLabel = document.getElementById('productCount');
+                const noResults = document.getElementById('noResults');
 
-        document.getElementById('filterForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            fetchProducts();
-        });
+                // 로딩 스켈레톤
+                grid.innerHTML = Array(6).fill(0).map(() => `<div class="skeleton h-64 rounded-2xl"></div>`).join('');
+                tableBody.innerHTML = '';
 
-        document.addEventListener('DOMContentLoaded', init);
+                try {
+                    const brands = Array.from(document.querySelectorAll('.brand-checkbox:checked')).map(el => el.value);
+                    const min = document.getElementById('minPrice').value;
+                    const max = document.getElementById('maxPrice').value;
+                    const sort = document.getElementById('sortOrder').value;
+
+                    let query = supabase.from('products').select('*', { count: 'exact' });
+
+                    if (brands.length > 0) query = query.in('brand', brands);
+                    if (min) query = query.gte('monthly_fee', min);
+                    if (max) query = query.lte('monthly_fee', max);
+                    
+                    if (sort === 'price_asc') query = query.order('monthly_fee', { ascending: true });
+                    else if (sort === 'price_desc') query = query.order('monthly_fee', { ascending: false });
+                    else query = query.order('created_at', { ascending: false });
+
+                    const { data, error, count } = await query;
+                    if (error) throw error;
+
+                    countLabel.innerText = count || 0;
+                    
+                    if (!data || data.length === 0) {
+                        grid.innerHTML = '';
+                        noResults.classList.remove('hidden');
+                    } else {
+                        noResults.classList.add('hidden');
+                        
+                        // 카드형
+                        grid.innerHTML = data.map(p => `
+                            <div class="bg-white border border-slate-100 rounded-3xl p-5 hover:shadow-xl hover:shadow-indigo-100 transition-all flex flex-col">
+                                <div class="h-40 bg-slate-50 rounded-2xl mb-4 flex items-center justify-center overflow-hidden">
+                                    <img src="${p.image_url || 'https://placehold.co/400x400?text=' + encodeURIComponent(p.name)}" 
+                                         class="max-h-[80%] object-contain"
+                                         onerror="this.src='https://placehold.co/400x400?text=Rental'">
+                                </div>
+                                <p class="text-[10px] font-black text-indigo-600 mb-1 tracking-widest uppercase">${p.brand}</p>
+                                <h4 class="font-bold text-slate-900 leading-tight mb-4 flex-1">${p.name}</h4>
+                                <div class="flex items-end justify-between border-t pt-4">
+                                    <div>
+                                        <p class="text-[10px] text-slate-400 font-bold uppercase">월 렌탈료</p>
+                                        <span class="text-xl font-black">${Number(p.monthly_fee).toLocaleString()}원</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-xs font-bold text-rose-500">${p.benefit_amount}만 혜택</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+
+                        // 표형
+                        tableBody.innerHTML = data.map(p => `
+                            <tr class="hover:bg-indigo-50/30 transition-colors">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <img src="${p.image_url || 'https://placehold.co/50'}" class="w-10 h-10 object-contain bg-slate-50 rounded-lg">
+                                        <span class="font-bold text-sm">${p.name}</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4"><span class="text-xs font-bold bg-indigo-50 text-indigo-600 px-2 py-1 rounded-md">${p.brand}</span></td>
+                                <td class="px-6 py-4 font-bold text-sm">${Number(p.monthly_fee).toLocaleString()}원</td>
+                                <td class="px-6 py-4 font-bold text-rose-500 text-sm">${p.benefit_amount}만원</td>
+                                <td class="px-6 py-4 text-center">
+                                    <button class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-indigo-600 transition-all">문의</button>
+                                </td>
+                            </tr>
+                        `).join('');
+                    }
+                } catch (err) {
+                    const el = document.getElementById('statusMessage');
+                    el.innerText = "데이터 조회 실패: " + err.message;
+                    el.classList.remove('hidden');
+                }
+            }
+
+            function resetFilters() {
+                document.getElementById('filterForm').reset();
+                fetchProducts();
+            }
+
+            // 이벤트 리스너 등록
+            document.getElementById('filterForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                fetchProducts();
+            });
+
+            document.getElementById('btnReset').addEventListener('click', resetFilters);
+            document.getElementById('btnShowAll').addEventListener('click', resetFilters);
+            document.getElementById('btnCardView').addEventListener('click', () => setView('card'));
+            document.getElementById('btnTableView').addEventListener('click', () => setView('table'));
+            document.getElementById('sortOrder').addEventListener('change', fetchProducts);
+
+            // 실시간 반영 리스너
+            document.querySelectorAll('.brand-checkbox').forEach(el => {
+                el.addEventListener('change', fetchProducts);
+            });
+            document.querySelectorAll('.price-input').forEach(el => {
+                el.addEventListener('input', fetchProducts);
+            });
+
+            // 초기화
+            async function init() {
+                try {
+                    await supabase.auth.signInAnonymously();
+                    await fetchProducts();
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+
+            init();
+        })();
     </script>
 </body>
 </html>
