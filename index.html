@@ -10,310 +10,312 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
         body {
             font-family: 'Noto Sans KR', sans-serif;
-            background-color: #f8fafc;
+            background-color: #f1f5f9;
         }
         .filter-section {
             background: white;
-            border-radius: 1rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border-radius: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
         }
-        .custom-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0 8px;
+        .product-card {
+            background: white;
+            border-radius: 1.25rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid #e2e8f0;
         }
-        .custom-table tr {
-            background-color: white;
-            transition: all 0.2s;
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+            border-color: #6366f1;
         }
-        .custom-table tr:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
-        .custom-table td {
-            padding: 1.25rem 1rem;
-            border-top: 1px solid #f1f5f9;
-            border-bottom: 1px solid #f1f5f9;
-        }
-        .custom-table td:first-child { border-left: 1px solid #f1f5f9; border-radius: 0.75rem 0 0 0.75rem; }
-        .custom-table td:last-child { border-right: 1px solid #f1f5f9; border-radius: 0 0.75rem 0.75rem 0; }
+        .badge-cold { background-color: #eff6ff; color: #2563eb; }
+        .badge-hot { background-color: #fef2f2; color: #dc2626; }
+        .badge-normal { background-color: #f8fafc; color: #475569; }
+        .badge-ice { background-color: #ecfeff; color: #0891b2; }
         
-        .skeleton {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
-        }
-        @keyframes loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        /* 기능별 커스텀 컬러 배지 */
-        .badge-cold { background-color: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; }
-        .badge-hot { background-color: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; }
-        .badge-normal { background-color: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
-        .badge-ice { background-color: #ecfeff; color: #0891b2; border: 1px solid #cffafe; }
+        .price-tag-new { background-color: #f8fafc; border-radius: 0.75rem; }
+        .price-tag-comp { background-color: #f0fdf4; border-radius: 0.75rem; border: 1px solid #dcfce7; }
+        
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
 <body class="text-slate-900 px-4 py-8">
 
-    <header class="max-w-7xl mx-auto mb-10">
-        <h1 class="text-2xl font-black text-slate-900 flex items-center gap-2">
-            <span class="bg-indigo-600 text-white w-8 h-8 flex items-center justify-center rounded-lg text-lg">R</span>
-            렌탈 상품 통합 검색
-        </h1>
-        <p class="text-slate-500 text-sm mt-1">데이터베이스 기반 실시간 조건 검색 시스템</p>
+    <header class="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-black text-slate-900 flex items-center gap-3">
+                <span class="bg-indigo-600 text-white w-10 h-10 flex items-center justify-center rounded-xl text-xl shadow-lg shadow-indigo-200">R</span>
+                렌탈 상품 비교 검색
+            </h1>
+            <p class="text-slate-500 text-sm mt-2 font-medium">동일 모델의 신규 가입 vs 타사 보상 혜택을 한눈에 비교하세요.</p>
+        </div>
+        <div class="flex items-center gap-2 text-sm">
+            <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+            <span class="text-slate-600 font-bold">실시간 데이터 연동 중</span>
+        </div>
     </header>
 
     <main class="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
-        <!-- Sidebar Filters -->
-        <aside class="w-full lg:w-72 shrink-0">
-            <div class="filter-section p-6 space-y-8 sticky top-6">
-                <div class="flex items-center justify-between border-b pb-4">
-                    <h2 class="font-bold text-sm text-slate-700">검색 필터</h2>
-                    <button type="button" id="btnReset" class="text-[11px] text-slate-400 hover:text-indigo-600 font-bold">초기화</button>
+        <!-- 사이드바 필터 -->
+        <aside class="w-full lg:w-80 shrink-0">
+            <div class="filter-section p-7 space-y-8 sticky top-6 border border-slate-200">
+                <div class="flex items-center justify-between">
+                    <h2 class="font-black text-lg text-slate-800 tracking-tight">상세 조건</h2>
+                    <button type="button" id="btnReset" class="text-xs text-slate-400 hover:text-indigo-600 font-bold flex items-center gap-1 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        초기화
+                    </button>
                 </div>
 
                 <!-- 브랜드 -->
-                <div class="space-y-3">
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">브랜드 선택</label>
+                <div class="space-y-4">
+                    <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest">브랜드</label>
                     <div class="grid grid-cols-2 gap-2">
                         <label class="cursor-pointer">
                             <input type="checkbox" name="brand" value="코웨이" class="hidden brand-checkbox peer">
-                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-indigo-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">코웨이</span>
+                            <span class="block text-center py-3 rounded-xl border-2 border-slate-100 text-xs font-bold text-slate-500 bg-slate-50 peer-checked:bg-white peer-checked:text-indigo-600 peer-checked:border-indigo-600 transition-all">코웨이</span>
                         </label>
                         <label class="cursor-pointer">
                             <input type="checkbox" name="brand" value="SK매직" class="hidden brand-checkbox peer">
-                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-indigo-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">SK매직</span>
+                            <span class="block text-center py-3 rounded-xl border-2 border-slate-100 text-xs font-bold text-slate-500 bg-slate-50 peer-checked:bg-white peer-checked:text-indigo-600 peer-checked:border-indigo-600 transition-all">SK매직</span>
                         </label>
                         <label class="cursor-pointer">
                             <input type="checkbox" name="brand" value="LG전자" class="hidden brand-checkbox peer">
-                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-indigo-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">LG전자</span>
+                            <span class="block text-center py-3 rounded-xl border-2 border-slate-100 text-xs font-bold text-slate-500 bg-slate-50 peer-checked:bg-white peer-checked:text-indigo-600 peer-checked:border-indigo-600 transition-all">LG전자</span>
                         </label>
                         <label class="cursor-pointer">
                             <input type="checkbox" name="brand" value="쿠쿠" class="hidden brand-checkbox peer">
-                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-indigo-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">쿠쿠</span>
+                            <span class="block text-center py-3 rounded-xl border-2 border-slate-100 text-xs font-bold text-slate-500 bg-slate-50 peer-checked:bg-white peer-checked:text-indigo-600 peer-checked:border-indigo-600 transition-all">쿠쿠</span>
                         </label>
                     </div>
                 </div>
 
-                <!-- 필수 기능 필터 -->
-                <div class="space-y-3">
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">필수 기능</label>
+                <!-- 기능 -->
+                <div class="space-y-4">
+                    <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest">필수 기능</label>
                     <div class="grid grid-cols-2 gap-2">
-                        <label class="cursor-pointer">
-                            <input type="checkbox" name="feature" value="has_cold" class="hidden feature-checkbox peer">
-                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-blue-300 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition-all">냉수</span>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="checkbox" name="feature" value="has_hot" class="hidden feature-checkbox peer">
-                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-red-300 peer-checked:bg-red-600 peer-checked:text-white peer-checked:border-red-600 transition-all">온수</span>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="checkbox" name="feature" value="has_normal" class="hidden feature-checkbox peer">
-                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-slate-400 peer-checked:bg-slate-600 peer-checked:text-white peer-checked:border-slate-600 transition-all">정수</span>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="checkbox" name="feature" value="has_ice" class="hidden feature-checkbox peer">
-                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-cyan-300 peer-checked:bg-cyan-500 peer-checked:text-white peer-checked:border-cyan-500 transition-all">얼음</span>
-                        </label>
+                        <label class="cursor-pointer"><input type="checkbox" name="feature" value="has_cold" class="hidden feature-checkbox peer"><span class="block text-center py-3 rounded-xl border-2 border-slate-100 text-xs font-bold text-slate-500 bg-slate-50 peer-checked:bg-blue-50 peer-checked:text-blue-600 peer-checked:border-blue-600 transition-all">냉수</span></label>
+                        <label class="cursor-pointer"><input type="checkbox" name="feature" value="has_hot" class="hidden feature-checkbox peer"><span class="block text-center py-3 rounded-xl border-2 border-slate-100 text-xs font-bold text-slate-500 bg-slate-50 peer-checked:bg-red-50 peer-checked:text-red-600 peer-checked:border-red-600 transition-all">온수</span></label>
+                        <label class="cursor-pointer"><input type="checkbox" name="feature" value="has_normal" class="hidden feature-checkbox peer"><span class="block text-center py-3 rounded-xl border-2 border-slate-100 text-xs font-bold text-slate-500 bg-slate-50 peer-checked:bg-slate-200 peer-checked:text-slate-800 peer-checked:border-slate-800 transition-all">정수</span></label>
+                        <label class="cursor-pointer"><input type="checkbox" name="feature" value="has_ice" class="hidden feature-checkbox peer"><span class="block text-center py-3 rounded-xl border-2 border-slate-100 text-xs font-bold text-slate-500 bg-slate-50 peer-checked:bg-cyan-50 peer-checked:text-cyan-600 peer-checked:border-cyan-600 transition-all">얼음</span></label>
                     </div>
                 </div>
 
-                <!-- 약정기간 -->
-                <div class="space-y-3">
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">약정 (단위: 년)</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <label class="cursor-pointer">
-                            <input type="checkbox" name="period" value="3" class="hidden period-checkbox peer">
-                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-indigo-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">3년</span>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="checkbox" name="period" value="5" class="hidden period-checkbox peer">
-                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-indigo-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">5년</span>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="checkbox" name="period" value="6" class="hidden period-checkbox peer">
-                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-indigo-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">6년</span>
-                        </label>
+                <!-- 약정 -->
+                <div class="space-y-4">
+                    <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest">약정 기간</label>
+                    <div class="flex flex-wrap gap-2">
+                        <label class="cursor-pointer"><input type="checkbox" name="period" value="3" class="hidden period-checkbox peer"><span class="px-4 py-2 rounded-full border-2 border-slate-100 text-xs font-bold text-slate-500 bg-slate-50 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">3년</span></label>
+                        <label class="cursor-pointer"><input type="checkbox" name="period" value="5" class="hidden period-checkbox peer"><span class="px-4 py-2 rounded-full border-2 border-slate-100 text-xs font-bold text-slate-500 bg-slate-50 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">5년</span></label>
+                        <label class="cursor-pointer"><input type="checkbox" name="period" value="6" class="hidden period-checkbox peer"><span class="px-4 py-2 rounded-full border-2 border-slate-100 text-xs font-bold text-slate-500 bg-slate-50 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">6년</span></label>
                     </div>
                 </div>
 
-                <!-- 타사보상 여부 -->
-                <div class="space-y-3">
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">추가 조건</label>
-                    <label class="flex items-center gap-3 cursor-pointer p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-emerald-200 transition-all group">
-                        <div class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="isCompensation" class="sr-only peer other-reward-checkbox">
-                            <div class="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-                        </div>
-                        <span class="text-xs font-bold text-slate-600 group-hover:text-emerald-700">타사보상 가능 상품</span>
-                    </label>
-                </div>
-
-                <!-- 가격 범위 -->
-                <div class="space-y-3">
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">월 요금 범위 (원)</label>
+                <!-- 가격 -->
+                <div class="space-y-4">
+                    <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest">월 렌탈료 범위</label>
                     <div class="flex items-center gap-2">
-                        <input type="number" id="minPrice" placeholder="최소" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-xs font-medium focus:border-indigo-500 outline-none price-input">
-                        <span class="text-slate-300">-</span>
-                        <input type="number" id="maxPrice" placeholder="최대" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-xs font-medium focus:border-indigo-500 outline-none price-input">
+                        <input type="number" id="minPrice" placeholder="0" class="w-full bg-slate-50 border-2 border-slate-100 p-3 rounded-xl text-sm font-bold focus:border-indigo-500 outline-none transition-all">
+                        <span class="text-slate-300 font-bold">~</span>
+                        <input type="number" id="maxPrice" placeholder="최대" class="w-full bg-slate-50 border-2 border-slate-100 p-3 rounded-xl text-sm font-bold focus:border-indigo-500 outline-none transition-all">
                     </div>
                 </div>
 
-                <button type="button" id="btnApply" class="w-full bg-slate-900 text-white py-4 rounded-xl font-black text-sm hover:bg-indigo-600 transition-all shadow-lg shadow-slate-200">
-                    검색 적용하기
+                <button type="button" id="btnApply" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-base hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
+                    결과 검색하기
                 </button>
             </div>
         </aside>
 
-        <!-- Product Table View -->
+        <!-- 상품 리스트 영역 -->
         <section class="flex-1">
-            <div id="statusMessage" class="hidden mb-6 p-4 rounded-xl bg-rose-50 text-rose-700 text-xs border border-rose-100"></div>
+            <div id="statusMessage" class="hidden mb-6 p-4 rounded-2xl bg-rose-50 text-rose-700 text-sm font-bold border border-rose-100 animate-pulse"></div>
 
-            <div class="flex items-center justify-between mb-4">
-                <p class="text-sm font-bold text-slate-500">전체 <span id="productCount" class="text-indigo-600">0</span>개 상품</p>
-                <select id="sortOrder" class="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold outline-none text-slate-600">
-                    <option value="created_at">최신 등록순</option>
-                    <option value="price_asc">가격 낮은순</option>
-                    <option value="price_desc">가격 높은순</option>
-                </select>
+            <div class="flex items-center justify-between mb-6 px-2">
+                <p class="text-sm font-bold text-slate-500">조건 일치 상품 <span id="productCount" class="text-indigo-600 text-lg">0</span>건</p>
+                <div class="flex items-center gap-3">
+                    <select id="sortOrder" class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-black outline-none text-slate-700 shadow-sm cursor-pointer hover:border-indigo-300 transition-all">
+                        <option value="created_at">최신 등록순</option>
+                        <option value="price_asc">낮은 요금순</option>
+                        <option value="price_desc">높은 요금순</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="custom-table">
-                    <thead>
-                        <tr class="text-[10px] text-slate-400 font-black uppercase tracking-wider">
-                            <th class="px-6 py-2 text-left">모델명/상품명</th>
-                            <th class="px-6 py-2 text-left">브랜드</th>
-                            <th class="px-6 py-2 text-left">기능 (냉/온/정/얼)</th>
-                            <th class="px-6 py-2 text-left">약정</th>
-                            <th class="px-6 py-2 text-left">타사보상</th>
-                            <th class="px-6 py-2 text-left">월 요금</th>
-                            <th class="px-6 py-2 text-left">현금 사은품</th>
-                        </tr>
-                    </thead>
-                    <tbody id="productTableBody">
-                        <!-- Initial Loading -->
-                    </tbody>
-                </table>
+            <!-- 카드 리스트 컨테이너 -->
+            <div id="productGrid" class="space-y-4">
+                <!-- 스켈레톤 로딩 -->
+                <div class="product-card p-6 animate-pulse bg-white">
+                    <div class="h-6 w-1/3 bg-slate-100 rounded-md mb-4"></div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="h-20 bg-slate-50 rounded-xl"></div>
+                        <div class="h-20 bg-slate-50 rounded-xl"></div>
+                    </div>
+                </div>
             </div>
 
-            <div id="noResults" class="hidden flex flex-col items-center justify-center py-32 text-slate-400 bg-white rounded-2xl border-2 border-dashed border-slate-100">
-                <p class="font-bold">일치하는 상품이 없습니다.</p>
-                <button type="button" id="btnShowAll" class="mt-2 text-indigo-600 underline text-xs">필터 초기화 후 다시 보기</button>
+            <!-- 결과 없음 -->
+            <div id="noResults" class="hidden flex flex-col items-center justify-center py-40 text-slate-400 bg-white rounded-3xl border-2 border-dashed border-slate-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-4 text-slate-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <p class="font-black text-lg text-slate-300">조건에 맞는 상품이 없습니다.</p>
+                <button type="button" id="btnShowAll" class="mt-4 text-indigo-600 font-bold text-sm hover:underline">필터 초기화하기</button>
             </div>
         </section>
     </main>
 
     <script>
         (function() {
-            // Supabase 초기화 (변수명 겹침 방지)
             const S_URL = 'https://sdxtxskdwyohlqqgglpj.supabase.co';
             const S_KEY = 'sb_publishable_JPCveUmMXhJrXd1vhkHBuQ_gDupA828';
             const client = window.supabase.createClient(S_URL, S_KEY);
 
             async function fetchItems() {
-                const tableBody = document.getElementById('productTableBody');
+                const grid = document.getElementById('productGrid');
                 const countLabel = document.getElementById('productCount');
                 const noResults = document.getElementById('noResults');
                 const statusMsg = document.getElementById('statusMessage');
 
                 statusMsg.classList.add('hidden');
-                tableBody.innerHTML = Array(5).fill(0).map(() => `<tr><td colspan="7"><div class="skeleton h-12 w-full rounded-lg"></div></td></tr>`).join('');
+                grid.innerHTML = Array(3).fill(0).map(() => `<div class="product-card p-6 animate-pulse bg-white border border-slate-100 rounded-3xl"><div class="h-6 w-48 bg-slate-100 rounded-lg mb-4"></div><div class="grid grid-cols-2 gap-4"><div class="h-24 bg-slate-50 rounded-2xl"></div><div class="h-24 bg-slate-50 rounded-2xl"></div></div></div>`).join('');
 
                 try {
                     const brands = Array.from(document.querySelectorAll('.brand-checkbox:checked')).map(el => el.value);
                     const periods = Array.from(document.querySelectorAll('.period-checkbox:checked')).map(el => el.value);
                     const features = Array.from(document.querySelectorAll('.feature-checkbox:checked')).map(el => el.value);
-                    const isCompensation = document.getElementById('isCompensation').checked;
                     const min = document.getElementById('minPrice').value;
                     const max = document.getElementById('maxPrice').value;
                     const sort = document.getElementById('sortOrder').value;
 
-                    // 스키마 이미지에 근거한 정확한 쿼리 생성
-                    let query = client.from('products').select('*', { count: 'exact' });
+                    let query = client.from('products').select('*');
 
                     if (brands.length > 0) query = query.in('brand', brands);
                     if (periods.length > 0) query = query.in('contract_years', periods);
-                    if (isCompensation) query = query.eq('is_compensation_avail', true);
                     if (min) query = query.gte('monthly_fee', min);
                     if (max) query = query.lte('monthly_fee', max);
                     
-                    // 냉/온/정/얼 필터 (has_cold, has_hot 등)
-                    features.forEach(f => {
-                        query = query.eq(f, true);
-                    });
+                    features.forEach(f => { query = query.eq(f, true); });
 
-                    // 정렬
+                    // 정렬 로직 (그룹화 전 기본 정렬)
                     if (sort === 'price_asc') query = query.order('monthly_fee', { ascending: true });
                     else if (sort === 'price_desc') query = query.order('monthly_fee', { ascending: false });
                     else query = query.order('created_at', { ascending: false });
 
-                    const { data, error, count } = await query;
-                    
+                    const { data, error } = await query;
                     if (error) throw error;
 
-                    countLabel.innerText = count || 0;
-                    
                     if (!data || data.length === 0) {
-                        tableBody.innerHTML = '';
+                        grid.innerHTML = '';
+                        countLabel.innerText = '0';
                         noResults.classList.remove('hidden');
-                    } else {
-                        noResults.classList.add('hidden');
-                        tableBody.innerHTML = data.map(p => {
-                            // 기능 뱃지 생성 (has_cold, has_hot, has_normal, has_ice)
-                            const badges = [];
-                            if (p.has_cold) badges.push('<span class="badge-cold px-2 py-0.5 rounded text-[10px] font-bold">냉</span>');
-                            if (p.has_hot) badges.push('<span class="badge-hot px-2 py-0.5 rounded text-[10px] font-bold">온</span>');
-                            if (p.has_normal) badges.push('<span class="badge-normal px-2 py-0.5 rounded text-[10px] font-bold">정</span>');
-                            if (p.has_ice) badges.push('<span class="badge-ice px-2 py-0.5 rounded text-[10px] font-bold">얼음</span>');
-                            
-                            const featureHtml = badges.length > 0 ? badges.join(' ') : '<span class="text-slate-300">-</span>';
+                        return;
+                    }
 
-                            // 사은품: gift_amount * 10,000
-                            const giftVal = Number(p.gift_amount);
-                            const giftDisplay = (!isNaN(giftVal) && giftVal > 0) 
-                                ? `<span class="text-rose-600 font-black">${(giftVal * 10000).toLocaleString()}원</span>` 
-                                : '<span class="text-slate-400">별도문의</span>';
+                    // 데이터 그룹화 (모델명 + 약정 + 기능 + 브랜드 기준)
+                    const grouped = {};
+                    data.forEach(item => {
+                        const key = `${item.brand}_${item.model_name}_${item.contract_years}_${item.has_cold}_${item.has_hot}_${item.has_normal}_${item.has_ice}`;
+                        if (!grouped[key]) {
+                            grouped[key] = {
+                                info: item,
+                                normal: null,    // 일반신규 (is_compensation_avail: false)
+                                compensation: null // 타사보상 (is_compensation_avail: true)
+                            };
+                        }
+                        if (item.is_compensation_avail) grouped[key].compensation = item;
+                        else grouped[key].normal = item;
+                    });
+
+                    const groupList = Object.values(grouped);
+                    countLabel.innerText = groupList.length;
+                    noResults.classList.add('hidden');
+
+                    grid.innerHTML = groupList.map(group => {
+                        const p = group.info;
+                        
+                        // 기능 뱃지
+                        const badges = [];
+                        if (p.has_cold) badges.push('<span class="badge-cold px-2 py-1 rounded-md text-[10px] font-black">냉수</span>');
+                        if (p.has_hot) badges.push('<span class="badge-hot px-2 py-1 rounded-md text-[10px] font-black">온수</span>');
+                        if (p.has_normal) badges.push('<span class="badge-normal px-2 py-1 rounded-md text-[10px] font-black">정수</span>');
+                        if (p.has_ice) badges.push('<span class="badge-ice px-2 py-1 rounded-md text-[10px] font-black">얼음</span>');
+                        
+                        // 가격 및 사은품 렌더링 함수
+                        const renderBenefit = (item, typeName) => {
+                            if (!item) return `
+                                <div class="flex-1 p-4 rounded-2xl bg-slate-50 border border-dashed border-slate-200 flex flex-col items-center justify-center">
+                                    <span class="text-[10px] font-bold text-slate-300 uppercase mb-1">${typeName}</span>
+                                    <span class="text-xs text-slate-300 font-medium italic">해당 조건 없음</span>
+                                </div>`;
+                            
+                            const gift = (Number(item.gift_amount || 0) * 10000).toLocaleString();
+                            const price = Number(item.monthly_fee || 0).toLocaleString();
+                            const isComp = typeName === '타사보상';
 
                             return `
-                                <tr>
-                                    <td class="px-6 py-4">
-                                        <div class="flex flex-col">
-                                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">${p.model_name || 'MODEL-CODE'}</span>
-                                            <span class="font-bold text-slate-800 text-sm leading-tight">${p.category || '렌탈 상품'}</span>
+                                <div class="flex-1 p-4 ${isComp ? 'price-tag-comp' : 'price-tag-new'} relative overflow-hidden">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <span class="text-[10px] font-black ${isComp ? 'text-emerald-600' : 'text-slate-400'} uppercase tracking-tighter">${typeName}</span>
+                                        ${isComp ? '<span class="bg-emerald-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black">BEST</span>' : ''}
+                                    </div>
+                                    <div class="space-y-1">
+                                        <div class="flex items-baseline justify-between">
+                                            <span class="text-[11px] text-slate-500 font-bold">월 요금</span>
+                                            <span class="text-lg font-black text-slate-900">${price}<small class="text-xs font-normal ml-0.5">원</small></span>
                                         </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="text-[10px] font-black bg-slate-100 text-slate-600 px-2 py-1 rounded tracking-tighter">${p.brand || '기타'}</span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex gap-1 flex-wrap">${featureHtml}</div>
-                                    </td>
-                                    <td class="px-6 py-4 text-xs font-medium text-slate-500">
-                                        ${p.contract_years || '0'}년
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        ${p.is_compensation_avail 
-                                            ? '<span class="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded uppercase border border-emerald-100">가능</span>' 
-                                            : '<span class="text-[10px] font-bold text-slate-300">-</span>'}
-                                    </td>
-                                    <td class="px-6 py-4 font-black text-sm text-indigo-600">
-                                        ${Number(p.monthly_fee || 0).toLocaleString()}원
-                                    </td>
-                                    <td class="px-6 py-4 text-xs">
-                                        ${giftDisplay}
-                                    </td>
-                                </tr>
-                            `;
-                        }).join('');
-                    }
+                                        <div class="flex items-baseline justify-between pt-1 border-t border-white/50">
+                                            <span class="text-[11px] text-slate-500 font-bold">현금 지원</span>
+                                            <span class="text-sm font-black ${isComp ? 'text-emerald-600' : 'text-rose-500'}">${gift}<small class="text-[10px] font-normal ml-0.5">원</small></span>
+                                        </div>
+                                    </div>
+                                </div>`;
+                        };
+
+                        return `
+                            <div class="product-card p-6 border border-slate-200">
+                                <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
+                                    <div class="space-y-2">
+                                        <div class="flex items-center gap-2">
+                                            <span class="bg-slate-900 text-white text-[10px] font-black px-2 py-1 rounded tracking-tighter">${p.brand}</span>
+                                            <span class="text-slate-400 font-bold text-xs">${p.model_name || 'MODEL-CODE'}</span>
+                                        </div>
+                                        <h3 class="text-xl font-black text-slate-800 leading-tight">${p.category || '프리미엄 렌탈 상품'}</h3>
+                                        <div class="flex gap-1.5">${badges.join('')}</div>
+                                    </div>
+                                    <div class="flex items-center gap-4 bg-slate-50 px-4 py-3 rounded-2xl border border-slate-100">
+                                        <div class="text-center">
+                                            <p class="text-[10px] font-black text-slate-400 uppercase mb-0.5">약정기간</p>
+                                            <p class="text-sm font-black text-indigo-600">${p.contract_years}년</p>
+                                        </div>
+                                        <div class="w-px h-6 bg-slate-200"></div>
+                                        <div class="text-center">
+                                            <p class="text-[10px] font-black text-slate-400 uppercase mb-0.5">방문주기</p>
+                                            <p class="text-sm font-black text-slate-700">관리포함</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    ${renderBenefit(group.normal, '일반신규')}
+                                    ${renderBenefit(group.compensation, '타사보상')}
+                                </div>
+                                
+                                <div class="mt-4 pt-4 border-t border-slate-50 flex justify-end">
+                                    <button class="text-xs font-bold text-indigo-600 flex items-center gap-1 hover:text-indigo-800 transition-colors">
+                                        상세 혜택 문의하기
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
                 } catch (err) {
                     console.error("Fetch Error:", err);
-                    statusMsg.innerText = "연동 오류: " + err.message;
+                    statusMsg.innerText = "데이터 연동 오류: " + err.message;
                     statusMsg.classList.remove('hidden');
-                    tableBody.innerHTML = '';
+                    grid.innerHTML = '';
                 }
             }
 
@@ -323,13 +325,11 @@
                 fetchItems();
             }
 
-            // 이벤트 설정
             document.getElementById('btnReset').addEventListener('click', clearFilters);
             document.getElementById('btnShowAll').addEventListener('click', clearFilters);
             document.getElementById('btnApply').addEventListener('click', fetchItems);
             document.getElementById('sortOrder').addEventListener('change', fetchItems);
 
-            // 초기 실행
             window.addEventListener('load', () => {
                 client.auth.signInAnonymously().then(() => fetchItems());
             });
