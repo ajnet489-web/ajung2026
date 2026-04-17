@@ -47,6 +47,12 @@
             0% { background-position: 200% 0; }
             100% { background-position: -200% 0; }
         }
+
+        /* 기능별 커스텀 컬러 배지 */
+        .badge-cold { background-color: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; }
+        .badge-hot { background-color: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; }
+        .badge-natural { background-color: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
+        .badge-ice { background-color: #ecfeff; color: #0891b2; border: 1px solid #cffafe; }
     </style>
 </head>
 <body class="text-slate-900 px-4 py-8">
@@ -91,7 +97,30 @@
                     </div>
                 </div>
 
-                <!-- 약정기간 (36, 48, 60, 72개월) -->
+                <!-- 필수 기능 필터 -->
+                <div class="space-y-3">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">필수 기능</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="cursor-pointer">
+                            <input type="checkbox" name="feature" value="is_cold" class="hidden feature-checkbox peer">
+                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-blue-300 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition-all">냉수</span>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="checkbox" name="feature" value="is_hot" class="hidden feature-checkbox peer">
+                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-red-300 peer-checked:bg-red-600 peer-checked:text-white peer-checked:border-red-600 transition-all">온수</span>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="checkbox" name="feature" value="is_natural" class="hidden feature-checkbox peer">
+                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-slate-400 peer-checked:bg-slate-600 peer-checked:text-white peer-checked:border-slate-600 transition-all">정수</span>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="checkbox" name="feature" value="is_ice" class="hidden feature-checkbox peer">
+                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-cyan-300 peer-checked:bg-cyan-500 peer-checked:text-white peer-checked:border-cyan-500 transition-all">얼음</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 약정기간 -->
                 <div class="space-y-3">
                     <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">약정기간</label>
                     <div class="grid grid-cols-2 gap-2">
@@ -116,7 +145,7 @@
 
                 <!-- 타사보상 여부 -->
                 <div class="space-y-3">
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">추가 조건</label>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">타사보상 혜택</label>
                     <label class="flex items-center gap-3 cursor-pointer p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-emerald-200 transition-all group">
                         <div class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" id="otherReward" class="sr-only peer other-reward-checkbox">
@@ -159,13 +188,13 @@
                 <table class="custom-table">
                     <thead>
                         <tr class="text-[10px] text-slate-400 font-black uppercase tracking-wider">
-                            <th class="px-6 py-2 text-left">상품명</th>
+                            <th class="px-6 py-2 text-left">모델명/상품명</th>
                             <th class="px-6 py-2 text-left">브랜드</th>
+                            <th class="px-6 py-2 text-left">기능 (냉/온/정/얼)</th>
                             <th class="px-6 py-2 text-left">약정</th>
                             <th class="px-6 py-2 text-left">타사보상</th>
                             <th class="px-6 py-2 text-left">월 요금</th>
-                            <th class="px-6 py-2 text-left">혜택(사은품)</th>
-                            <th class="px-6 py-2 text-center">문의</th>
+                            <th class="px-6 py-2 text-left">현금 사은품</th>
                         </tr>
                     </thead>
                     <tbody id="productTableBody">
@@ -196,12 +225,13 @@
                 const countLabel = document.getElementById('productCount');
                 const noResults = document.getElementById('noResults');
 
-                // 로딩 스켈레톤 애니메이션
+                // 로딩 애니메이션
                 tableBody.innerHTML = Array(5).fill(0).map(() => `<tr><td colspan="7"><div class="skeleton h-12 w-full rounded-lg"></div></td></tr>`).join('');
 
                 try {
                     const brands = Array.from(document.querySelectorAll('.brand-checkbox:checked')).map(el => el.value);
                     const periods = Array.from(document.querySelectorAll('.period-checkbox:checked')).map(el => el.value);
+                    const features = Array.from(document.querySelectorAll('.feature-checkbox:checked')).map(el => el.value);
                     const otherReward = document.getElementById('otherReward').checked;
                     const min = document.getElementById('minPrice').value;
                     const max = document.getElementById('maxPrice').value;
@@ -209,12 +239,19 @@
 
                     let query = supabase.from('products').select('*', { count: 'exact' });
 
+                    // 필터 적용
                     if (brands.length > 0) query = query.in('brand', brands);
                     if (periods.length > 0) query = query.in('contract_period', periods);
                     if (otherReward) query = query.eq('other_company_reward', true);
                     if (min) query = query.gte('monthly_fee', min);
                     if (max) query = query.lte('monthly_fee', max);
                     
+                    // 기능 필터 적용
+                    features.forEach(f => {
+                        query = query.eq(f, true);
+                    });
+
+                    // 정렬 적용
                     if (sort === 'price_asc') query = query.order('monthly_fee', { ascending: true });
                     else if (sort === 'price_desc') query = query.order('monthly_fee', { ascending: false });
                     else query = query.order('created_at', { ascending: false });
@@ -229,27 +266,57 @@
                         noResults.classList.remove('hidden');
                     } else {
                         noResults.classList.add('hidden');
-                        tableBody.innerHTML = data.map(p => `
-                            <tr>
-                                <td class="px-6 py-4"><span class="font-bold text-slate-800 text-sm">${p.name}</span></td>
-                                <td class="px-6 py-4"><span class="text-[10px] font-black bg-slate-100 text-slate-600 px-2 py-1 rounded tracking-tighter">${p.brand}</span></td>
-                                <td class="px-6 py-4"><span class="text-xs font-medium text-slate-500">${p.contract_period || '-'}개월</span></td>
-                                <td class="px-6 py-4">
-                                    ${p.other_company_reward 
-                                        ? '<span class="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded uppercase">가능</span>' 
-                                        : '<span class="text-[10px] font-bold text-slate-300">-</span>'}
-                                </td>
-                                <td class="px-6 py-4 font-black text-sm text-indigo-600">${Number(p.monthly_fee).toLocaleString()}원</td>
-                                <td class="px-6 py-4 font-bold text-rose-500 text-xs">${p.benefit_amount}만원 상당</td>
-                                <td class="px-6 py-4 text-center">
-                                    <button class="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg text-xs font-black hover:bg-indigo-600 hover:text-white transition-all">상담</button>
-                                </td>
-                            </tr>
-                        `).join('');
+                        tableBody.innerHTML = data.map(p => {
+                            // 기능 태그 생성 및 색상 구분
+                            const badges = [];
+                            if (p.is_cold) badges.push('<span class="badge-cold px-2 py-0.5 rounded text-[10px] font-bold">냉</span>');
+                            if (p.is_hot) badges.push('<span class="badge-hot px-2 py-0.5 rounded text-[10px] font-bold">온</span>');
+                            if (p.is_natural) badges.push('<span class="badge-natural px-2 py-0.5 rounded text-[10px] font-bold">정</span>');
+                            if (p.is_ice) badges.push('<span class="badge-ice px-2 py-0.5 rounded text-[10px] font-bold">얼음</span>');
+                            
+                            const featureHtml = badges.length > 0 ? badges.join(' ') : '<span class="text-slate-300">-</span>';
+
+                            // 사은품 표시 로직 (gift_amount x 10,000)
+                            const rawGiftAmount = Number(p.gift_amount);
+                            const finalGiftText = (!isNaN(rawGiftAmount) && rawGiftAmount > 0) 
+                                ? `<span class="text-rose-600 font-black">${(rawGiftAmount * 10000).toLocaleString()}원</span>` 
+                                : '<span class="text-slate-400">별도문의</span>';
+
+                            return `
+                                <tr>
+                                    <td class="px-6 py-4">
+                                        <div class="flex flex-col">
+                                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">${p.model_name || 'MODEL-ID'}</span>
+                                            <span class="font-bold text-slate-800 text-sm leading-tight">${p.name}</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="text-[10px] font-black bg-slate-100 text-slate-600 px-2 py-1 rounded tracking-tighter">${p.brand}</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex gap-1 flex-wrap">${featureHtml}</div>
+                                    </td>
+                                    <td class="px-6 py-4 text-xs font-medium text-slate-500">
+                                        ${p.contract_period || '-'}개월
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        ${p.other_company_reward 
+                                            ? '<span class="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded uppercase border border-emerald-100">가능</span>' 
+                                            : '<span class="text-[10px] font-bold text-slate-300">-</span>'}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="font-black text-sm text-indigo-600">${Number(p.monthly_fee).toLocaleString()}원</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-xs">${finalGiftText}</div>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('');
                     }
                 } catch (err) {
                     const el = document.getElementById('statusMessage');
-                    el.innerText = "데이터 로드 실패: " + err.message;
+                    el.innerText = "연동 오류: " + err.message;
                     el.classList.remove('hidden');
                 }
             }
@@ -259,24 +326,27 @@
                 fetchProducts();
             }
 
+            // 이벤트 리스너 설정
             document.getElementById('filterForm').addEventListener('submit', (e) => { e.preventDefault(); fetchProducts(); });
             document.getElementById('btnReset').addEventListener('click', resetFilters);
             document.getElementById('btnShowAll').addEventListener('click', resetFilters);
             document.getElementById('sortOrder').addEventListener('change', fetchProducts);
 
-            document.querySelectorAll('.brand-checkbox, .period-checkbox, .other-reward-checkbox').forEach(el => {
+            // 입력/선택 시 자동 검색
+            document.querySelectorAll('.brand-checkbox, .period-checkbox, .feature-checkbox, .other-reward-checkbox').forEach(el => {
                 el.addEventListener('change', fetchProducts);
             });
             document.querySelectorAll('.price-input').forEach(el => {
                 el.addEventListener('input', fetchProducts);
             });
 
+            // 초기화
             async function init() {
                 try {
                     await supabase.auth.signInAnonymously();
                     await fetchProducts();
                 } catch (err) {
-                    console.error("Initialization error:", err);
+                    console.error("Supabase 초기화 실패:", err);
                 }
             }
 
