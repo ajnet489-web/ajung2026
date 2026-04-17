@@ -51,7 +51,7 @@
         /* 기능별 커스텀 컬러 배지 */
         .badge-cold { background-color: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; }
         .badge-hot { background-color: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; }
-        .badge-natural { background-color: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
+        .badge-normal { background-color: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
         .badge-ice { background-color: #ecfeff; color: #0891b2; border: 1px solid #cffafe; }
     </style>
 </head>
@@ -60,39 +60,39 @@
     <header class="max-w-7xl mx-auto mb-10">
         <h1 class="text-2xl font-black text-slate-900 flex items-center gap-2">
             <span class="bg-indigo-600 text-white w-8 h-8 flex items-center justify-center rounded-lg text-lg">R</span>
-            렌탈 상품 비교 검색
+            렌탈 상품 통합 검색
         </h1>
-        <p class="text-slate-500 text-sm mt-1">이미지 없이 조건별로 빠르게 확인하세요.</p>
+        <p class="text-slate-500 text-sm mt-1">데이터베이스 기반 실시간 조건 검색 시스템</p>
     </header>
 
     <main class="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
         <!-- Sidebar Filters -->
         <aside class="w-full lg:w-72 shrink-0">
-            <form id="filterForm" class="filter-section p-6 space-y-8 sticky top-6">
+            <div class="filter-section p-6 space-y-8 sticky top-6">
                 <div class="flex items-center justify-between border-b pb-4">
-                    <h2 class="font-bold text-sm">검색 필터</h2>
+                    <h2 class="font-bold text-sm text-slate-700">검색 필터</h2>
                     <button type="button" id="btnReset" class="text-[11px] text-slate-400 hover:text-indigo-600 font-bold">초기화</button>
                 </div>
 
                 <!-- 브랜드 -->
                 <div class="space-y-3">
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">브랜드</label>
-                    <div class="flex flex-wrap gap-2">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">브랜드 선택</label>
+                    <div class="grid grid-cols-2 gap-2">
                         <label class="cursor-pointer">
                             <input type="checkbox" name="brand" value="코웨이" class="hidden brand-checkbox peer">
-                            <span class="inline-block px-3 py-1.5 rounded-full border text-xs font-bold border-slate-200 text-slate-500 bg-white hover:border-indigo-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">코웨이</span>
+                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-indigo-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">코웨이</span>
                         </label>
                         <label class="cursor-pointer">
                             <input type="checkbox" name="brand" value="SK매직" class="hidden brand-checkbox peer">
-                            <span class="inline-block px-3 py-1.5 rounded-full border text-xs font-bold border-slate-200 text-slate-500 bg-white hover:border-indigo-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">SK매직</span>
+                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-indigo-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">SK매직</span>
                         </label>
                         <label class="cursor-pointer">
                             <input type="checkbox" name="brand" value="LG전자" class="hidden brand-checkbox peer">
-                            <span class="inline-block px-3 py-1.5 rounded-full border text-xs font-bold border-slate-200 text-slate-500 bg-white hover:border-indigo-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">LG전자</span>
+                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-indigo-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">LG전자</span>
                         </label>
                         <label class="cursor-pointer">
                             <input type="checkbox" name="brand" value="쿠쿠" class="hidden brand-checkbox peer">
-                            <span class="inline-block px-3 py-1.5 rounded-full border text-xs font-bold border-slate-200 text-slate-500 bg-white hover:border-indigo-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">쿠쿠</span>
+                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-indigo-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">쿠쿠</span>
                         </label>
                     </div>
                 </div>
@@ -102,19 +102,19 @@
                     <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">필수 기능</label>
                     <div class="grid grid-cols-2 gap-2">
                         <label class="cursor-pointer">
-                            <input type="checkbox" name="feature" value="is_cold" class="hidden feature-checkbox peer">
+                            <input type="checkbox" name="feature" value="has_cold" class="hidden feature-checkbox peer">
                             <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-blue-300 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition-all">냉수</span>
                         </label>
                         <label class="cursor-pointer">
-                            <input type="checkbox" name="feature" value="is_hot" class="hidden feature-checkbox peer">
+                            <input type="checkbox" name="feature" value="has_hot" class="hidden feature-checkbox peer">
                             <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-red-300 peer-checked:bg-red-600 peer-checked:text-white peer-checked:border-red-600 transition-all">온수</span>
                         </label>
                         <label class="cursor-pointer">
-                            <input type="checkbox" name="feature" value="is_natural" class="hidden feature-checkbox peer">
+                            <input type="checkbox" name="feature" value="has_normal" class="hidden feature-checkbox peer">
                             <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-slate-400 peer-checked:bg-slate-600 peer-checked:text-white peer-checked:border-slate-600 transition-all">정수</span>
                         </label>
                         <label class="cursor-pointer">
-                            <input type="checkbox" name="feature" value="is_ice" class="hidden feature-checkbox peer">
+                            <input type="checkbox" name="feature" value="has_ice" class="hidden feature-checkbox peer">
                             <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-cyan-300 peer-checked:bg-cyan-500 peer-checked:text-white peer-checked:border-cyan-500 transition-all">얼음</span>
                         </label>
                     </div>
@@ -122,33 +122,29 @@
 
                 <!-- 약정기간 -->
                 <div class="space-y-3">
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">약정기간</label>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">약정 (단위: 년)</label>
                     <div class="grid grid-cols-2 gap-2">
                         <label class="cursor-pointer">
-                            <input type="checkbox" name="period" value="36" class="hidden period-checkbox peer">
-                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-indigo-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">36개월</span>
+                            <input type="checkbox" name="period" value="3" class="hidden period-checkbox peer">
+                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-indigo-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">3년</span>
                         </label>
                         <label class="cursor-pointer">
-                            <input type="checkbox" name="period" value="48" class="hidden period-checkbox peer">
-                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-indigo-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">48개월</span>
+                            <input type="checkbox" name="period" value="5" class="hidden period-checkbox peer">
+                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-indigo-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">5년</span>
                         </label>
                         <label class="cursor-pointer">
-                            <input type="checkbox" name="period" value="60" class="hidden period-checkbox peer">
-                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-indigo-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">60개월</span>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="checkbox" name="period" value="72" class="hidden period-checkbox peer">
-                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-indigo-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">72개월</span>
+                            <input type="checkbox" name="period" value="6" class="hidden period-checkbox peer">
+                            <span class="block text-center px-2 py-2 rounded-lg border text-[11px] font-bold border-slate-200 text-slate-500 bg-white hover:border-indigo-300 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all">6년</span>
                         </label>
                     </div>
                 </div>
 
                 <!-- 타사보상 여부 -->
                 <div class="space-y-3">
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">타사보상 혜택</label>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">추가 조건</label>
                     <label class="flex items-center gap-3 cursor-pointer p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-emerald-200 transition-all group">
                         <div class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="otherReward" class="sr-only peer other-reward-checkbox">
+                            <input type="checkbox" id="isCompensation" class="sr-only peer other-reward-checkbox">
                             <div class="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                         </div>
                         <span class="text-xs font-bold text-slate-600 group-hover:text-emerald-700">타사보상 가능 상품</span>
@@ -157,7 +153,7 @@
 
                 <!-- 가격 범위 -->
                 <div class="space-y-3">
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">월 요금 (원)</label>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">월 요금 범위 (원)</label>
                     <div class="flex items-center gap-2">
                         <input type="number" id="minPrice" placeholder="최소" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-xs font-medium focus:border-indigo-500 outline-none price-input">
                         <span class="text-slate-300">-</span>
@@ -165,10 +161,10 @@
                     </div>
                 </div>
 
-                <button type="submit" class="w-full bg-slate-900 text-white py-4 rounded-xl font-black text-sm hover:bg-indigo-600 transition-all">
-                    결과 검색
+                <button type="button" id="btnApply" class="w-full bg-slate-900 text-white py-4 rounded-xl font-black text-sm hover:bg-indigo-600 transition-all shadow-lg shadow-slate-200">
+                    검색 적용하기
                 </button>
-            </form>
+            </div>
         </aside>
 
         <!-- Product Table View -->
@@ -176,11 +172,11 @@
             <div id="statusMessage" class="hidden mb-6 p-4 rounded-xl bg-rose-50 text-rose-700 text-xs border border-rose-100"></div>
 
             <div class="flex items-center justify-between mb-4">
-                <p class="text-sm font-bold text-slate-500">전체 <span id="productCount" class="text-indigo-600">0</span>개 결과</p>
+                <p class="text-sm font-bold text-slate-500">전체 <span id="productCount" class="text-indigo-600">0</span>개 상품</p>
                 <select id="sortOrder" class="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold outline-none text-slate-600">
                     <option value="created_at">최신 등록순</option>
-                    <option value="price_asc">월 요금 낮은순</option>
-                    <option value="price_desc">월 요금 높은순</option>
+                    <option value="price_asc">가격 낮은순</option>
+                    <option value="price_desc">가격 높은순</option>
                 </select>
             </div>
 
@@ -212,51 +208,50 @@
 
     <script>
         (function() {
-            const SUPABASE_URL = 'https://sdxtxskdwyohlqqgglpj.supabase.co';
-            const SUPABASE_ANON_KEY = 'sb_publishable_JPCveUmMXhJrXd1vhkHBuQ_gDupA828'; 
-            
-            if (window.rentalAppInitialized) return;
-            window.rentalAppInitialized = true;
+            // Supabase 초기화 (변수명 겹침 방지)
+            const S_URL = 'https://sdxtxskdwyohlqqgglpj.supabase.co';
+            const S_KEY = 'sb_publishable_JPCveUmMXhJrXd1vhkHBuQ_gDupA828';
+            const client = window.supabase.createClient(S_URL, S_KEY);
 
-            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-            async function fetchProducts() {
+            async function fetchItems() {
                 const tableBody = document.getElementById('productTableBody');
                 const countLabel = document.getElementById('productCount');
                 const noResults = document.getElementById('noResults');
+                const statusMsg = document.getElementById('statusMessage');
 
-                // 로딩 애니메이션
+                statusMsg.classList.add('hidden');
                 tableBody.innerHTML = Array(5).fill(0).map(() => `<tr><td colspan="7"><div class="skeleton h-12 w-full rounded-lg"></div></td></tr>`).join('');
 
                 try {
                     const brands = Array.from(document.querySelectorAll('.brand-checkbox:checked')).map(el => el.value);
                     const periods = Array.from(document.querySelectorAll('.period-checkbox:checked')).map(el => el.value);
                     const features = Array.from(document.querySelectorAll('.feature-checkbox:checked')).map(el => el.value);
-                    const otherReward = document.getElementById('otherReward').checked;
+                    const isCompensation = document.getElementById('isCompensation').checked;
                     const min = document.getElementById('minPrice').value;
                     const max = document.getElementById('maxPrice').value;
                     const sort = document.getElementById('sortOrder').value;
 
-                    let query = supabase.from('products').select('*', { count: 'exact' });
+                    // 스키마 이미지에 근거한 정확한 쿼리 생성
+                    let query = client.from('products').select('*', { count: 'exact' });
 
-                    // 필터 적용
                     if (brands.length > 0) query = query.in('brand', brands);
-                    if (periods.length > 0) query = query.in('contract_period', periods);
-                    if (otherReward) query = query.eq('other_company_reward', true);
+                    if (periods.length > 0) query = query.in('contract_years', periods);
+                    if (isCompensation) query = query.eq('is_compensation_avail', true);
                     if (min) query = query.gte('monthly_fee', min);
                     if (max) query = query.lte('monthly_fee', max);
                     
-                    // 기능 필터 적용
+                    // 냉/온/정/얼 필터 (has_cold, has_hot 등)
                     features.forEach(f => {
                         query = query.eq(f, true);
                     });
 
-                    // 정렬 적용
+                    // 정렬
                     if (sort === 'price_asc') query = query.order('monthly_fee', { ascending: true });
                     else if (sort === 'price_desc') query = query.order('monthly_fee', { ascending: false });
                     else query = query.order('created_at', { ascending: false });
 
                     const { data, error, count } = await query;
+                    
                     if (error) throw error;
 
                     countLabel.innerText = count || 0;
@@ -267,90 +262,77 @@
                     } else {
                         noResults.classList.add('hidden');
                         tableBody.innerHTML = data.map(p => {
-                            // 기능 태그 생성 및 색상 구분
+                            // 기능 뱃지 생성 (has_cold, has_hot, has_normal, has_ice)
                             const badges = [];
-                            if (p.is_cold) badges.push('<span class="badge-cold px-2 py-0.5 rounded text-[10px] font-bold">냉</span>');
-                            if (p.is_hot) badges.push('<span class="badge-hot px-2 py-0.5 rounded text-[10px] font-bold">온</span>');
-                            if (p.is_natural) badges.push('<span class="badge-natural px-2 py-0.5 rounded text-[10px] font-bold">정</span>');
-                            if (p.is_ice) badges.push('<span class="badge-ice px-2 py-0.5 rounded text-[10px] font-bold">얼음</span>');
+                            if (p.has_cold) badges.push('<span class="badge-cold px-2 py-0.5 rounded text-[10px] font-bold">냉</span>');
+                            if (p.has_hot) badges.push('<span class="badge-hot px-2 py-0.5 rounded text-[10px] font-bold">온</span>');
+                            if (p.has_normal) badges.push('<span class="badge-normal px-2 py-0.5 rounded text-[10px] font-bold">정</span>');
+                            if (p.has_ice) badges.push('<span class="badge-ice px-2 py-0.5 rounded text-[10px] font-bold">얼음</span>');
                             
                             const featureHtml = badges.length > 0 ? badges.join(' ') : '<span class="text-slate-300">-</span>';
 
-                            // 사은품 표시 로직 (gift_amount x 10,000)
-                            const rawGiftAmount = Number(p.gift_amount);
-                            const finalGiftText = (!isNaN(rawGiftAmount) && rawGiftAmount > 0) 
-                                ? `<span class="text-rose-600 font-black">${(rawGiftAmount * 10000).toLocaleString()}원</span>` 
+                            // 사은품: gift_amount * 10,000
+                            const giftVal = Number(p.gift_amount);
+                            const giftDisplay = (!isNaN(giftVal) && giftVal > 0) 
+                                ? `<span class="text-rose-600 font-black">${(giftVal * 10000).toLocaleString()}원</span>` 
                                 : '<span class="text-slate-400">별도문의</span>';
 
                             return `
                                 <tr>
                                     <td class="px-6 py-4">
                                         <div class="flex flex-col">
-                                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">${p.model_name || 'MODEL-ID'}</span>
-                                            <span class="font-bold text-slate-800 text-sm leading-tight">${p.name}</span>
+                                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">${p.model_name || 'MODEL-CODE'}</span>
+                                            <span class="font-bold text-slate-800 text-sm leading-tight">${p.category || '렌탈 상품'}</span>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4">
-                                        <span class="text-[10px] font-black bg-slate-100 text-slate-600 px-2 py-1 rounded tracking-tighter">${p.brand}</span>
+                                        <span class="text-[10px] font-black bg-slate-100 text-slate-600 px-2 py-1 rounded tracking-tighter">${p.brand || '기타'}</span>
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="flex gap-1 flex-wrap">${featureHtml}</div>
                                     </td>
                                     <td class="px-6 py-4 text-xs font-medium text-slate-500">
-                                        ${p.contract_period || '-'}개월
+                                        ${p.contract_years || '0'}년
                                     </td>
                                     <td class="px-6 py-4">
-                                        ${p.other_company_reward 
+                                        ${p.is_compensation_avail 
                                             ? '<span class="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded uppercase border border-emerald-100">가능</span>' 
                                             : '<span class="text-[10px] font-bold text-slate-300">-</span>'}
                                     </td>
-                                    <td class="px-6 py-4">
-                                        <span class="font-black text-sm text-indigo-600">${Number(p.monthly_fee).toLocaleString()}원</span>
+                                    <td class="px-6 py-4 font-black text-sm text-indigo-600">
+                                        ${Number(p.monthly_fee || 0).toLocaleString()}원
                                     </td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-xs">${finalGiftText}</div>
+                                    <td class="px-6 py-4 text-xs">
+                                        ${giftDisplay}
                                     </td>
                                 </tr>
                             `;
                         }).join('');
                     }
                 } catch (err) {
-                    const el = document.getElementById('statusMessage');
-                    el.innerText = "연동 오류: " + err.message;
-                    el.classList.remove('hidden');
+                    console.error("Fetch Error:", err);
+                    statusMsg.innerText = "연동 오류: " + err.message;
+                    statusMsg.classList.remove('hidden');
+                    tableBody.innerHTML = '';
                 }
             }
 
-            function resetFilters() {
-                document.getElementById('filterForm').reset();
-                fetchProducts();
+            function clearFilters() {
+                document.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
+                document.querySelectorAll('input[type="number"]').forEach(el => el.value = '');
+                fetchItems();
             }
 
-            // 이벤트 리스너 설정
-            document.getElementById('filterForm').addEventListener('submit', (e) => { e.preventDefault(); fetchProducts(); });
-            document.getElementById('btnReset').addEventListener('click', resetFilters);
-            document.getElementById('btnShowAll').addEventListener('click', resetFilters);
-            document.getElementById('sortOrder').addEventListener('change', fetchProducts);
+            // 이벤트 설정
+            document.getElementById('btnReset').addEventListener('click', clearFilters);
+            document.getElementById('btnShowAll').addEventListener('click', clearFilters);
+            document.getElementById('btnApply').addEventListener('click', fetchItems);
+            document.getElementById('sortOrder').addEventListener('change', fetchItems);
 
-            // 입력/선택 시 자동 검색
-            document.querySelectorAll('.brand-checkbox, .period-checkbox, .feature-checkbox, .other-reward-checkbox').forEach(el => {
-                el.addEventListener('change', fetchProducts);
+            // 초기 실행
+            window.addEventListener('load', () => {
+                client.auth.signInAnonymously().then(() => fetchItems());
             });
-            document.querySelectorAll('.price-input').forEach(el => {
-                el.addEventListener('input', fetchProducts);
-            });
-
-            // 초기화
-            async function init() {
-                try {
-                    await supabase.auth.signInAnonymously();
-                    await fetchProducts();
-                } catch (err) {
-                    console.error("Supabase 초기화 실패:", err);
-                }
-            }
-
-            init();
         })();
     </script>
 </body>
