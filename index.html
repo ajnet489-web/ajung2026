@@ -17,8 +17,6 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; }
-        .animate-spin-slow { animation: spin 3s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-slate-50">
@@ -27,88 +25,81 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useCallback } = React;
 
-        // 초기 설정 데이터 (기존 값 유지)
         const DEFAULT_URL = "https://sdxtxskdwyohlqqgglpj.supabase.co";
         const DEFAULT_KEY = "sb_publishable_JPCveUmMXhJrXd1vhkHBuQ_gDupA828";
 
         const App = () => {
             const [url, setUrl] = useState(DEFAULT_URL);
             const [apiKey, setApiKey] = useState(DEFAULT_KEY);
-            const [status, setStatus] = useState('idle'); // idle, connecting, success, error
+            const [status, setStatus] = useState('idle');
             const [activeTab, setActiveTab] = useState('dashboard');
             const [agentsData, setAgentsData] = useState([]);
             const [searchTerm, setSearchTerm] = useState('');
             const [errorLog, setErrorLog] = useState(null);
 
-            // Lucide 아이콘 렌더링 헬퍼
             useEffect(() => {
-                if (window.lucide) {
-                    window.lucide.createIcons();
-                }
+                if (window.lucide) window.lucide.createIcons();
             }, [activeTab, agentsData, status]);
 
-            // Supabase 클라이언트 생성
             const supabase = useMemo(() => {
                 if (!window.supabase || !url || !apiKey) return null;
                 try {
-                    // API Key가 'sb_...'로 시작하는 경우 trim 처리 확인
                     return window.supabase.createClient(url.trim(), apiKey.trim());
                 } catch (err) {
-                    console.error("Supabase Client Init Error:", err);
                     return null;
                 }
             }, [url, apiKey]);
 
-            // 데이터 로딩 함수 (에러 핸들링 강화)
             const fetchPerformanceData = useCallback(async () => {
-                if (!supabase) {
-                    setStatus('error');
-                    setErrorLog("Supabase 클라이언트가 초기화되지 않았습니다.");
-                    return;
-                }
+                if (!supabase) return;
                 
                 setStatus('connecting');
                 setErrorLog(null);
 
                 try {
-                    // 1. 'performance_logs'와 'counselors' 조인 시도 (SQL 스크립트 기준)
-                    // 만약 테이블명이 'performance'라면 아래 .from() 부분을 수정해야 합니다.
+                    // ERD에 명시된 performance_logs 테이블 사용
                     const { data, error } = await supabase
-                        .from('performance_logs') // SQL 스크립트의 테이블명으로 수정
+                        .from('performance_logs')
                         .select(`
                             *,
                             counselors (
                                 name,
-                                center
+                                center,
+                                part
                             )
                         `);
                     
                     if (error) throw error;
 
                     if (data && data.length > 0) {
-                        // 데이터 매핑 (UI 구조에 맞게 변환)
-                        const mappedData = data.map(item => ({
-                            id: item.id,
-                            name: item.counselors?.name || "알 수 없음",
-                            center: item.counselors?.center || "미소속",
-                            internet: item.internet_success_rate ? (item.internet_success_rate * 100).toFixed(0) : 0,
-                            rental: item.rental_success_rate ? (item.rental_success_rate * 100).toFixed(0) : 0,
-                            usim: item.usim_conversion_rate ? (item.usim_conversion_rate * 100).toFixed(0) : 0,
-                            score: (item.total_incentive / 10000).toFixed(0) // 예시 점수 계산
-                        }));
+                        const mappedData = data.map(item => {
+                            // Supabase Joins는 보통 객체 형태로 데이터를 반환함
+                            const counselor = Array.isArray(item.counselors) ? item.counselors[0] : item.counselors;
+                            
+                            return {
+                                id: item.id,
+                                name: counselor?.name || "알 수 없음",
+                                center: counselor?.center || "미소속",
+                                part: counselor?.part || "-",
+                                // ERD 컬럼명 기반 매핑 (numeric -> %)
+                                internet: item.internet_success_rate ? (item.internet_success_rate * 100).toFixed(1) : 0,
+                                rental: item.rental_success_rate ? (item.rental_success_rate * 100).toFixed(1) : 0,
+                                usim: item.usim_conversion_rate ? (item.usim_conversion_rate * 100).toFixed(1) : 0,
+                                incentive: item.total_incentive?.toLocaleString() || 0,
+                                rank: item.margin_rank || '-'
+                            };
+                        });
                         setAgentsData(mappedData);
                         setStatus('success');
                     } else {
-                        // 데이터가 없을 경우 Mock 데이터로 대체 (테스트용)
-                        console.warn("No data found in Supabase. Using mock data.");
+                        // 데이터가 아예 없는 경우 샘플 데이터로 레이아웃 확인
                         setAgentsData(getMockData());
                         setStatus('success');
                     }
                 } catch (err) {
                     console.error("Fetch Error:", err);
                     setStatus('error');
-                    setErrorLog(err.message || "데이터를 불러오는 중 오류가 발생했습니다.");
-                    // 오류 발생 시에도 UI 확인을 위해 Mock 데이터 로드
+                    setErrorLog(err.message);
                     setAgentsData(getMockData());
                 }
             }, [supabase]);
@@ -117,7 +108,6 @@
                 if (supabase) fetchPerformanceData();
             }, [supabase, fetchPerformanceData]);
 
-            // 검색 필터링
             const filteredAgents = agentsData.filter(agent => 
                 agent.name?.toString().includes(searchTerm) || 
                 agent.center?.toString().includes(searchTerm)
@@ -125,156 +115,122 @@
 
             function getMockData() {
                 return [
-                    { id: 1, name: "안선미", center: "덕천센터", internet: 37, rental: 12, usim: 22, score: 94 },
-                    { id: 2, name: "박소연", center: "덕천센터", internet: 57, rental: 15, usim: 57, score: 88 },
-                    { id: 3, name: "정재욱", center: "부평센터", internet: 22, rental: 7, usim: 12, score: 76 },
-                    { id: 4, name: "박경진", center: "부평센터", internet: 190, rental: 45, usim: 82, score: 98 },
-                    { id: 5, name: "이준성", center: "부평센터", internet: 42, rental: 5, usim: 32, score: 82 },
+                    { id: 1, name: "안선미", center: "덕천센터", part: "1팀", internet: 21.7, rental: 40.5, usim: 18.9, incentive: "274,684", rank: 105 },
+                    { id: 2, name: "박소연", center: "덕천센터", part: "1팀", internet: 35.2, rental: 25.0, usim: 28.9, incentive: "850,000", rank: 54 },
                 ];
             }
 
             return (
                 <div className="min-h-screen bg-slate-50 text-slate-900 flex">
                     {/* 사이드바 */}
-                    <aside className="w-64 bg-slate-900 text-white flex flex-col hidden md:flex">
+                    <aside className="w-64 bg-slate-900 text-white flex flex-col hidden md:flex shrink-0">
                         <div className="p-8">
-                            <div className="flex items-center gap-3 mb-8">
-                                <div className="bg-blue-500 p-2 rounded-xl text-white">
-                                    <i data-lucide="trending-up"></i>
+                            <div className="flex items-center gap-3 mb-10">
+                                <div className="bg-blue-500 p-2 rounded-xl text-white shadow-lg shadow-blue-500/20">
+                                    <i data-lucide="trending-up" size="20"></i>
                                 </div>
                                 <span className="font-black text-xl tracking-tight">실적 마스터</span>
                             </div>
                             
                             <nav className="space-y-2">
-                                <button 
-                                    onClick={() => setActiveTab('dashboard')}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'dashboard' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}
-                                >
-                                    <i data-lucide="layout-dashboard"></i> <span className="font-bold">대시보드</span>
-                                </button>
-                                <button 
-                                    onClick={() => setActiveTab('analytics')}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'analytics' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}
-                                >
-                                    <i data-lucide="bar-chart-3"></i> <span className="font-bold">상세 분석</span>
-                                </button>
-                                <button 
-                                    onClick={() => setActiveTab('settings')}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'settings' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}
-                                >
-                                    <i data-lucide="settings"></i> <span className="font-bold">연결 설정</span>
-                                </button>
+                                {['dashboard', 'analytics', 'settings'].map((tab) => (
+                                    <button 
+                                        key={tab}
+                                        onClick={() => setActiveTab(tab)}
+                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === tab ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:bg-slate-800'}`}
+                                    >
+                                        <i data-lucide={tab === 'dashboard' ? 'layout-dashboard' : tab === 'analytics' ? 'bar-chart-3' : 'settings'}></i>
+                                        <span className="font-bold capitalize">{tab === 'dashboard' ? '대시보드' : tab === 'analytics' ? '분석' : '설정'}</span>
+                                    </button>
+                                ))}
                             </nav>
                         </div>
                         
                         <div className="mt-auto p-6 border-t border-slate-800">
-                            <div className={`flex items-center gap-2 p-3 rounded-xl ${status === 'success' ? 'bg-emerald-500/10 text-emerald-400' : status === 'connecting' ? 'bg-amber-500/10 text-amber-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                                <div className={`w-2 h-2 rounded-full ${status === 'success' ? 'bg-emerald-500 animate-pulse' : status === 'connecting' ? 'bg-amber-500 animate-bounce' : 'bg-rose-500'}`} />
-                                <span className="text-xs font-bold uppercase">{status === 'success' ? 'Connected' : status === 'connecting' ? 'Loading' : 'Error'}</span>
+                            <div className={`flex items-center gap-3 p-3 rounded-xl ${status === 'success' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                                <div className={`w-2 h-2 rounded-full ${status === 'success' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+                                <span className="text-[10px] font-black uppercase tracking-wider">{status === 'success' ? 'Database Linked' : 'Offline'}</span>
                             </div>
                         </div>
                     </aside>
 
-                    {/* 메인 콘텐츠 */}
+                    {/* 메인 */}
                     <main className="flex-1 flex flex-col h-screen overflow-y-auto">
-                        <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between sticky top-0 z-20">
-                            <h2 className="text-xl font-bold text-slate-800">
-                                {activeTab === 'dashboard' ? '상담원 성과 요약' : activeTab === 'analytics' ? '상담원 실적 통계' : '시스템 설정'}
-                            </h2>
+                        <header className="bg-white border-b border-slate-200 px-8 py-5 flex items-center justify-between sticky top-0 z-20">
+                            <div className="flex items-center gap-4">
+                                <h2 className="text-xl font-black text-slate-800">현황판</h2>
+                                <span className="text-xs bg-slate-100 text-slate-500 px-3 py-1 rounded-full font-bold">{filteredAgents.length}명 데이터</span>
+                            </div>
                             <div className="flex items-center gap-4">
                                 <div className="relative">
-                                    <i data-lucide="search" className="absolute left-3 top-2.5 text-slate-400" size="18"></i>
+                                    <i data-lucide="search" className="absolute left-3 top-2.5 text-slate-400" size="16"></i>
                                     <input 
                                         type="text" 
-                                        placeholder="상담원 이름 검색..."
+                                        placeholder="이름 또는 센터 검색..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                         className="pl-10 pr-4 py-2 bg-slate-100 border-none rounded-xl focus:ring-2 focus:ring-blue-500 outline-none w-64 text-sm font-medium"
                                     />
                                 </div>
-                                <button 
-                                    onClick={fetchPerformanceData}
-                                    className="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                                >
-                                    <i data-lucide="refresh-cw" className={status === 'connecting' ? 'animate-spin' : ''}></i>
+                                <button onClick={fetchPerformanceData} className="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                                    <i data-lucide="refresh-cw" className={status === 'connecting' ? 'animate-spin' : ''} size="18"></i>
                                 </button>
                             </div>
                         </header>
 
                         <div className="p-8">
                             {errorLog && (
-                                <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-2xl text-rose-600 text-sm font-medium flex items-center gap-3">
+                                <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-2xl text-rose-600 text-sm font-bold flex items-center gap-3">
                                     <i data-lucide="alert-circle" size="18"></i>
-                                    {errorLog}
+                                    오류 발생: {errorLog} (테이블명이나 RLS 정책을 확인하세요)
                                 </div>
                             )}
 
                             {activeTab === 'dashboard' && (
                                 <div className="space-y-8">
-                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                                        {[
-                                            { label: "총 상담원", value: filteredAgents.length, icon: "users", color: "blue" },
-                                            { label: "평균 인터넷", value: (filteredAgents.reduce((acc, curr) => acc + Number(curr.internet || 0), 0) / (filteredAgents.length || 1)).toFixed(1), icon: "database", color: "emerald" },
-                                            { label: "평균 렌탈", value: (filteredAgents.reduce((acc, curr) => acc + Number(curr.rental || 0), 0) / (filteredAgents.length || 1)).toFixed(1), icon: "trending-up", color: "amber" },
-                                            { label: "종합 성과 점수", value: "86.4%", icon: "bar-chart-3", color: "indigo" },
-                                        ].map((stat, i) => (
-                                            <div key={i} className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200">
-                                                <div className={`p-3 bg-${stat.color}-50 text-${stat.color}-600 rounded-2xl w-fit mb-4`}>
-                                                    <i data-lucide={stat.icon}></i>
-                                                </div>
-                                                <p className="text-slate-500 text-xs font-black uppercase tracking-widest">{stat.label}</p>
-                                                <h3 className="text-3xl font-black mt-1 text-slate-800">{stat.value}</h3>
-                                            </div>
-                                        ))}
-                                    </div>
-
                                     <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden">
-                                        <div className="p-8 border-b border-slate-100 flex justify-between items-center">
-                                            <h3 className="font-bold text-lg flex items-center gap-2">
-                                                <i data-lucide="users" className="text-blue-600"></i> 실시간 성과 지표
-                                            </h3>
-                                            <span className="text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-bold">전체 현황</span>
-                                        </div>
                                         <div className="overflow-x-auto">
-                                            <table className="w-full text-left">
-                                                <thead className="bg-slate-50">
+                                            <table className="w-full text-left border-collapse">
+                                                <thead className="bg-slate-50/50">
                                                     <tr>
-                                                        <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">상담원</th>
-                                                        <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">소속 센터</th>
-                                                        <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">인터넷</th>
-                                                        <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">렌탈</th>
-                                                        <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">유심</th>
-                                                        <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">종합 점수</th>
+                                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">상담원 정보</th>
+                                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">인터넷 성공</th>
+                                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">렌탈 성공</th>
+                                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">유심 전환</th>
+                                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">인센티브</th>
+                                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">순위</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100">
-                                                    {filteredAgents.length > 0 ? filteredAgents.map((agent, idx) => (
-                                                        <tr key={agent.id || idx} className="hover:bg-slate-50 transition-colors">
+                                                    {filteredAgents.map((agent, idx) => (
+                                                        <tr key={agent.id || idx} className="hover:bg-blue-50/30 transition-colors group">
                                                             <td className="px-8 py-5">
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-500">
-                                                                        {agent.name ? agent.name[0] : '?'}
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center font-black text-slate-500 text-sm group-hover:from-blue-500 group-hover:to-indigo-600 group-hover:text-white transition-all">
+                                                                        {agent.name[0]}
                                                                     </div>
-                                                                    <span className="font-bold text-slate-800">{agent.name}</span>
+                                                                    <div>
+                                                                        <div className="font-black text-slate-800">{agent.name}</div>
+                                                                        <div className="text-[11px] font-bold text-slate-400 uppercase">{agent.center} · {agent.part}</div>
+                                                                    </div>
                                                                 </div>
                                                             </td>
-                                                            <td className="px-8 py-5 font-semibold text-slate-500">{agent.center}</td>
-                                                            <td className="px-8 py-5 text-center font-mono font-bold text-blue-600">{agent.internet}</td>
-                                                            <td className="px-8 py-5 text-center font-mono font-bold text-amber-600">{agent.rental}</td>
-                                                            <td className="px-8 py-5 text-center font-mono font-bold text-emerald-600">{agent.usim}</td>
                                                             <td className="px-8 py-5 text-center">
-                                                                <span className={`px-4 py-1.5 rounded-full text-xs font-black ${agent.score >= 90 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                                                                    {agent.score}점
+                                                                <div className="text-sm font-black text-blue-600">{agent.internet}%</div>
+                                                                <div className="w-12 h-1 bg-slate-100 mx-auto rounded-full mt-1 overflow-hidden">
+                                                                    <div className="bg-blue-500 h-full" style={{width: `${agent.internet}%`}}></div>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-8 py-5 text-center font-black text-amber-600 text-sm">{agent.rental}%</td>
+                                                            <td className="px-8 py-5 text-center font-black text-emerald-600 text-sm">{agent.usim}%</td>
+                                                            <td className="px-8 py-5 text-right font-black text-slate-700 text-sm">{agent.incentive}원</td>
+                                                            <td className="px-8 py-5 text-center">
+                                                                <span className="bg-slate-100 text-slate-500 text-[10px] font-black px-2 py-1 rounded-md">
+                                                                    {agent.rank}위
                                                                 </span>
                                                             </td>
                                                         </tr>
-                                                    )) : (
-                                                        <tr>
-                                                            <td colSpan="6" className="px-8 py-20 text-center text-slate-400 font-medium">
-                                                                데이터가 없습니다. Supabase 설정을 확인하세요.
-                                                            </td>
-                                                        </tr>
-                                                    )}
+                                                    ))}
                                                 </tbody>
                                             </table>
                                         </div>
@@ -283,51 +239,21 @@
                             )}
 
                             {activeTab === 'settings' && (
-                                <div className="max-w-2xl mx-auto">
-                                    <section className="bg-white rounded-[2.5rem] shadow-xl border border-slate-200 overflow-hidden">
-                                        <div className="p-10 border-b border-slate-100 bg-slate-900 text-white">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <i data-lucide="shield-check" className="text-blue-400"></i>
-                                                <h3 className="text-2xl font-black">Supabase 연결</h3>
+                                <div className="max-w-xl mx-auto space-y-6">
+                                    <div className="bg-white p-10 rounded-[2.5rem] shadow-xl border border-slate-200">
+                                        <h3 className="text-xl font-black mb-6">연결 매개변수</h3>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Project URL</label>
+                                                <input type="text" value={url} onChange={(e)=>setUrl(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl border-none font-mono text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
                                             </div>
-                                            <p className="text-slate-400 text-sm">실적 데이터를 동기화하기 위한 API 설정을 관리합니다.</p>
+                                            <div>
+                                                <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Anon Key</label>
+                                                <textarea rows="3" value={apiKey} onChange={(e)=>setApiKey(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl border-none font-mono text-[10px] focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
+                                            </div>
+                                            <button onClick={fetchPerformanceData} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-black transition-all">설정 저장 및 새로고침</button>
                                         </div>
-                                        <div className="p-10 space-y-6">
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Supabase URL</label>
-                                                <input 
-                                                    type="text" 
-                                                    value={url}
-                                                    onChange={(e) => setUrl(e.target.value)}
-                                                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:border-blue-500 outline-none font-mono text-sm"
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Anon API Key</label>
-                                                <textarea 
-                                                    rows="3"
-                                                    value={apiKey}
-                                                    onChange={(e) => setApiKey(e.target.value)}
-                                                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:border-blue-500 outline-none font-mono text-xs resize-none"
-                                                />
-                                            </div>
-                                            <button 
-                                                onClick={fetchPerformanceData}
-                                                className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-3 hover:bg-slate-800 transition-colors"
-                                            >
-                                                <i data-lucide="database"></i>
-                                                설정 저장 및 연결 테스트
-                                            </button>
-                                        </div>
-                                    </section>
-                                </div>
-                            )}
-
-                            {activeTab === 'analytics' && (
-                                <div className="text-center py-40">
-                                    <i data-lucide="bar-chart-3" size="64" className="text-slate-200 mx-auto mb-6"></i>
-                                    <h3 className="text-2xl font-black text-slate-800">심층 데이터 분석</h3>
-                                    <p className="text-slate-500 mt-2">상담원별 시간적 추세 및 센터별 비교 분석 데이터가 준비 중입니다.</p>
+                                    </div>
                                 </div>
                             )}
                         </div>
