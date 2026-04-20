@@ -3,361 +3,377 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>상담원 실적 분석 대시보드 - 고도화 버전</title>
-    <!-- Tailwind CSS -->
+    <title>상담원 실적 분석 - 센터별 조회 기능</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- React, ReactDOM, Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Recharts (차트 라이브러리) -->
-    <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
-    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;900&display=swap');
-        body { font-family: 'Pretendard', sans-serif; overflow: hidden; }
+        body { font-family: 'Pretendard', sans-serif; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .tab-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
-<body class="bg-slate-50">
+<body class="bg-slate-50 text-slate-900">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo, useCallback } = React;
-        const { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip: RechartsTooltip, Legend } = Recharts;
+        const { useState, useEffect, useMemo, useCallback, useRef } = React;
 
         const DEFAULT_URL = "https://sdxtxskdwyohlqqgglpj.supabase.co";
         const DEFAULT_KEY = "sb_publishable_JPCveUmMXhJrXd1vhkHBuQ_gDupA828";
+
+        // --- 차트 컴포넌트 ---
+        const PerformanceChart = ({ data, label }) => {
+            const chartRef = useRef(null);
+            const chartInstance = useRef(null);
+
+            useEffect(() => {
+                if (chartRef.current) {
+                    if (chartInstance.current) chartInstance.current.destroy();
+                    const ctx = chartRef.current.getContext('2d');
+                    chartInstance.current = new Chart(ctx, {
+                        type: 'radar',
+                        data: {
+                            labels: ['인터넷', '렌탈', '유심', '마진역순', '효율'],
+                            datasets: [{
+                                label: label,
+                                data: data,
+                                fill: true,
+                                backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                                borderColor: 'rgb(59, 130, 246)',
+                                pointBackgroundColor: 'rgb(59, 130, 246)',
+                                pointBorderColor: '#fff',
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            scales: { r: { min: 0, max: 100, ticks: { display: false } } },
+                            plugins: { legend: { display: false } }
+                        }
+                    });
+                }
+                return () => { if (chartInstance.current) chartInstance.current.destroy(); };
+            }, [data, label]);
+
+            return <canvas ref={chartRef}></canvas>;
+        };
 
         const App = () => {
             const [url, setUrl] = useState(DEFAULT_URL);
             const [apiKey, setApiKey] = useState(DEFAULT_KEY);
             const [status, setStatus] = useState('idle');
             const [activeTab, setActiveTab] = useState('dashboard');
-            const [agentsData, setAgentsData] = useState([]);
-            const [selectedAgent, setSelectedAgent] = useState(null);
+            
+            // 데이터 상태
+            const [allData, setAllData] = useState([]); // 전체 원본 데이터
+            const [displayData, setDisplayData] = useState([]); // 필터링 후 화면에 보여줄 데이터
+            const [centers, setCenters] = useState([]); // 존재하는 센터 목록
+            
+            // 필터 상태
+            const [selectedCenter, setSelectedCenter] = useState('전체');
             const [searchTerm, setSearchTerm] = useState('');
+            const [selectedAgent, setSelectedAgent] = useState(null);
             const [errorLog, setErrorLog] = useState(null);
 
-            // 아이콘 초기화
-            useEffect(() => {
-                if (window.lucide) window.lucide.createIcons();
-            }, [activeTab, agentsData, status, selectedAgent]);
-
             const supabase = useMemo(() => {
-                if (!window.supabase || !url || !apiKey) return null;
-                try {
-                    return window.supabase.createClient(url.trim(), apiKey.trim());
-                } catch (err) {
-                    return null;
-                }
+                try { return window.supabase.createClient(url, apiKey); } catch (e) { return null; }
             }, [url, apiKey]);
 
-            // 데이터 로드 로직 (ERD 기반 조인)
-            const fetchData = useCallback(async () => {
+            // 초기 데이터 로드 (전체)
+            const fetchAllData = useCallback(async () => {
                 if (!supabase) return;
-                setStatus('connecting');
-                setErrorLog(null);
-
+                setStatus('loading');
                 try {
                     const { data, error } = await supabase
                         .from('performance_logs')
-                        .select(`
-                            *,
-                            counselors (
-                                id,
-                                name,
-                                center,
-                                part,
-                                skill
-                            )
-                        `);
+                        .select(`*, counselors(*)`);
                     
                     if (error) throw error;
 
-                    if (data && data.length > 0) {
-                        const mapped = data.map(item => {
-                            const c = Array.isArray(item.counselors) ? item.counselors[0] : item.counselors;
-                            return {
-                                ...item,
-                                counselor_info: c,
-                                display_name: c?.name || "미등록",
-                                display_center: c?.center || "미소속",
-                                display_part: c?.part || "-",
-                                internet_pct: (item.internet_success_rate * 100).toFixed(1),
-                                rental_pct: (item.rental_success_rate * 100).toFixed(1),
-                                usim_pct: (item.usim_conversion_rate * 100).toFixed(1)
-                            };
-                        });
-                        setAgentsData(mapped);
+                    if (data) {
+                        const processed = data.map(item => ({
+                            ...item,
+                            name: item.counselors?.name || "알수없음",
+                            center: item.counselors?.center || "미소속",
+                            part: item.counselors?.part || "-",
+                            internet_pct: (item.internet_success_rate * 100).toFixed(1),
+                            rental_pct: (item.rental_success_rate * 100).toFixed(1),
+                            usim_pct: (item.usim_conversion_rate * 100).toFixed(1)
+                        }));
+                        
+                        setAllData(processed);
+                        setDisplayData(processed); // 초기엔 전체 표시
+                        
+                        // 고유 센터 목록 추출
+                        const uniqueCenters = ['전체', ...new Set(processed.map(a => a.center))];
+                        setCenters(uniqueCenters);
+                        
                         setStatus('success');
-                        if (!selectedAgent && mapped.length > 0) setSelectedAgent(mapped[0]);
-                    } else {
-                        setStatus('success');
-                        setErrorLog("데이터베이스에 실적 데이터가 없습니다.");
+                        if (processed.length > 0) setSelectedAgent(processed[0]);
                     }
                 } catch (err) {
-                    console.error(err);
                     setStatus('error');
                     setErrorLog(err.message);
                 }
-            }, [supabase, selectedAgent]);
+            }, [supabase]);
 
-            useEffect(() => { fetchData(); }, [supabase]);
+            // [핵심 기능] 조회 버튼 클릭 시 필터링 수행
+            const handleSearch = () => {
+                setStatus('filtering');
+                setTimeout(() => {
+                    let filtered = allData;
+                    
+                    if (selectedCenter !== '전체') {
+                        filtered = filtered.filter(item => item.center === selectedCenter);
+                    }
+                    
+                    if (searchTerm) {
+                        filtered = filtered.filter(item => item.name.includes(searchTerm));
+                    }
+                    
+                    setDisplayData(filtered);
+                    setStatus('success');
+                    if (filtered.length > 0) setSelectedAgent(filtered[0]);
+                    else setSelectedAgent(null);
+                }, 300); // 시각적인 피드백을 위한 아주 짧은 딜레이
+            };
 
-            const filtered = agentsData.filter(a => 
-                a.display_name.includes(searchTerm) || a.display_center.includes(searchTerm)
-            );
+            useEffect(() => { 
+                fetchAllData(); 
+            }, [fetchAllData]);
 
-            // 분석용 Radar 차트 데이터 생성
-            const radarChartData = useMemo(() => {
-                if (!selectedAgent) return [];
-                const avgInternet = agentsData.reduce((acc, curr) => acc + curr.internet_success_rate, 0) / agentsData.length;
-                const avgRental = agentsData.reduce((acc, curr) => acc + curr.rental_success_rate, 0) / agentsData.length;
-                const avgUsim = agentsData.reduce((acc, curr) => acc + curr.usim_conversion_rate, 0) / agentsData.length;
-
-                return [
-                    { subject: '인터넷', A: selectedAgent.internet_success_rate * 100, B: avgInternet * 100 },
-                    { subject: '렌탈', A: selectedAgent.rental_success_rate * 100, B: avgRental * 100 },
-                    { subject: '유심', A: selectedAgent.usim_conversion_rate * 100, B: avgUsim * 100 },
-                    { subject: '마진효율', A: (1 - (selectedAgent.margin_rank / 150)) * 100, B: 50 },
-                    { subject: '콜효율', A: selectedAgent.call_efficiency * 100, B: 50 }
-                ];
-            }, [selectedAgent, agentsData]);
+            useEffect(() => {
+                if (window.lucide) window.lucide.createIcons();
+            }, [activeTab, displayData, status]);
 
             return (
-                <div className="flex h-screen bg-slate-50">
+                <div className="flex h-screen bg-slate-50 overflow-hidden">
                     {/* 사이드바 */}
-                    <aside className="w-64 bg-slate-900 text-white flex flex-col shrink-0">
+                    <aside className="w-64 bg-slate-900 text-white flex flex-col shrink-0 shadow-2xl z-10">
                         <div className="p-8">
                             <div className="flex items-center gap-3 mb-10">
-                                <div className="bg-blue-500 p-2 rounded-xl text-white shadow-lg shadow-blue-500/30">
-                                    <i data-lucide="layout-grid" size="20"></i>
+                                <div className="bg-blue-600 p-2 rounded-xl">
+                                    <i data-lucide="shield-check" size="20"></i>
                                 </div>
-                                <span className="font-black text-xl tracking-tighter">PERF MASTER</span>
+                                <span className="font-black text-xl tracking-tighter">AGENT CRM</span>
                             </div>
-                            
-                            <nav className="space-y-1.5">
-                                {[
-                                    { id: 'dashboard', icon: 'table-2', label: '성과 대시보드' },
-                                    { id: 'analytics', icon: 'pie-chart', label: '상세 분석' },
-                                    { id: 'settings', icon: 'database', label: 'DB 설정' }
-                                ].map((tab) => (
-                                    <button 
-                                        key={tab.id}
-                                        onClick={() => setActiveTab(tab.id)}
-                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === tab.id ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
-                                    >
-                                        <i data-lucide={tab.icon} size="18"></i>
-                                        <span className="font-bold text-sm">{tab.label}</span>
-                                    </button>
-                                ))}
+                            <nav className="space-y-2">
+                                <button onClick={() => setActiveTab('dashboard')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'dashboard' ? 'bg-blue-600 shadow-lg' : 'text-slate-400 hover:bg-slate-800'}`}>
+                                    <i data-lucide="layout-dashboard" size="18"></i>
+                                    <span className="font-bold text-sm">성과 대시보드</span>
+                                </button>
+                                <button onClick={() => setActiveTab('analytics')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'analytics' ? 'bg-blue-600 shadow-lg' : 'text-slate-400 hover:bg-slate-800'}`}>
+                                    <i data-lucide="pie-chart" size="18"></i>
+                                    <span className="font-bold text-sm">상세 분석</span>
+                                </button>
+                                <button onClick={() => setActiveTab('settings')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'settings' ? 'bg-blue-600 shadow-lg' : 'text-slate-400 hover:bg-slate-800'}`}>
+                                    <i data-lucide="database" size="18"></i>
+                                    <span className="font-bold text-sm">시스템 설정</span>
+                                </button>
                             </nav>
-                        </div>
-                        
-                        <div className="mt-auto p-6 border-t border-slate-800">
-                            <div className={`flex items-center gap-3 p-3 rounded-xl ${status === 'success' ? 'bg-emerald-500/10 text-emerald-400' : status === 'connecting' ? 'bg-blue-500/10 text-blue-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                                <div className={`w-2 h-2 rounded-full ${status === 'success' ? 'bg-emerald-500 animate-pulse' : status === 'connecting' ? 'bg-blue-500 animate-spin' : 'bg-rose-500'}`} />
-                                <span className="text-[10px] font-black uppercase tracking-widest">{status === 'success' ? 'Connected' : status === 'connecting' ? 'Syncing' : 'Disconnected'}</span>
-                            </div>
                         </div>
                     </aside>
 
-                    {/* 메인 섹션 */}
-                    <main className="flex-1 flex flex-col min-w-0 h-screen">
-                        <header className="bg-white border-b border-slate-200 px-8 py-5 flex items-center justify-between sticky top-0 z-20">
-                            <div>
-                                <h2 className="text-xl font-black text-slate-800 tracking-tight">
-                                    {activeTab === 'dashboard' ? '실시간 상담원 현황' : activeTab === 'analytics' ? '심층 데이터 분석' : 'Supabase 데이터 소스'}
-                                </h2>
-                                <p className="text-xs text-slate-400 font-bold mt-0.5 uppercase tracking-wide">March 2026 Performance Report</p>
+                    {/* 메인 영역 */}
+                    <main className="flex-1 flex flex-col overflow-hidden">
+                        {/* 검색/필터 헤더 */}
+                        <header className="bg-white border-b border-slate-200 p-6 flex flex-wrap items-center gap-4 shrink-0">
+                            <div className="flex flex-col gap-1 mr-4">
+                                <h2 className="text-xl font-black text-slate-800 tracking-tight leading-none">실적 필터링</h2>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Center-based Analysis</p>
                             </div>
-                            <div className="flex items-center gap-4">
-                                <div className="relative">
-                                    <i data-lucide="search" className="absolute left-3 top-2.5 text-slate-400" size="16"></i>
+
+                            <div className="flex items-center bg-slate-100 rounded-2xl p-1.5 gap-2 ml-auto">
+                                <div className="flex items-center px-3 gap-2">
+                                    <i data-lucide="map-pin" size="14" className="text-slate-400"></i>
+                                    <select 
+                                        value={selectedCenter} 
+                                        onChange={(e) => setSelectedCenter(e.target.value)}
+                                        className="bg-transparent text-sm font-bold text-slate-700 outline-none cursor-pointer"
+                                    >
+                                        {centers.map(c => <option key={c} value={c}>{c}</option>)}
+                                    </select>
+                                </div>
+                                <div className="w-px h-6 bg-slate-200"></div>
+                                <div className="relative flex items-center px-3">
+                                    <i data-lucide="user" size="14" className="text-slate-400 absolute left-3"></i>
                                     <input 
-                                        type="text" placeholder="이름/센터 검색..." value={searchTerm}
+                                        type="text" 
+                                        placeholder="상담원명..." 
+                                        value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="pl-10 pr-4 py-2 bg-slate-100 border-none rounded-xl focus:ring-2 focus:ring-blue-500 outline-none w-64 text-sm font-semibold"
+                                        className="bg-transparent text-sm font-bold text-slate-700 outline-none pl-6 w-32"
                                     />
                                 </div>
-                                <button onClick={fetchData} className="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-colors shadow-sm">
-                                    <i data-lucide="refresh-cw" className={status === 'connecting' ? 'animate-spin' : ''} size="18"></i>
+                                <button 
+                                    onClick={handleSearch}
+                                    className="bg-slate-900 text-white px-6 py-2 rounded-xl text-sm font-black hover:bg-blue-600 transition-all shadow-md active:scale-95"
+                                >
+                                    조회
                                 </button>
                             </div>
                         </header>
 
+                        {/* 대시보드 콘텐츠 */}
                         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-                            {errorLog && (
-                                <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-2xl text-rose-600 text-sm font-bold flex items-center gap-3 animate-in slide-in-from-top-2">
-                                    <i data-lucide="alert-triangle" size="18"></i> {errorLog}
+                            {status === 'loading' ? (
+                                <div className="h-full flex flex-col items-center justify-center gap-4 text-slate-400">
+                                    <div className="animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-blue-600"></div>
+                                    <p className="font-black text-sm uppercase tracking-tighter">데이터 로딩 중...</p>
                                 </div>
-                            )}
-
-                            {activeTab === 'dashboard' && (
-                                <div className="animate-in fade-in duration-500">
-                                    <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden">
-                                        <table className="w-full text-left border-collapse">
-                                            <thead className="bg-slate-50/80 border-b border-slate-100">
-                                                <tr>
-                                                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">상담원</th>
-                                                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">인터넷</th>
-                                                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">렌탈</th>
-                                                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">유심</th>
-                                                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">최종 인센티브</th>
-                                                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">동작</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-50">
-                                                {filtered.map((item) => (
-                                                    <tr key={item.id} className="hover:bg-blue-50/40 transition-all group">
-                                                        <td className="px-8 py-5">
-                                                            <div className="flex items-center gap-4">
-                                                                <div className="w-10 h-10 rounded-2xl bg-slate-100 group-hover:bg-blue-600 group-hover:text-white transition-colors flex items-center justify-center font-black text-slate-500">
-                                                                    {item.display_name[0]}
-                                                                </div>
-                                                                <div>
-                                                                    <div className="font-black text-slate-800 leading-tight">{item.display_name}</div>
-                                                                    <div className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">{item.display_center} · {item.display_part}</div>
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-8 py-5">
-                                                            <div className="text-center">
-                                                                <span className="text-sm font-black text-blue-600">{item.internet_pct}%</span>
-                                                                <div className="w-16 h-1.5 bg-slate-100 mx-auto rounded-full mt-1.5 overflow-hidden">
-                                                                    <div className="bg-blue-500 h-full" style={{width: `${item.internet_pct}%`}}></div>
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-8 py-5 text-center font-black text-amber-600 text-sm">{item.rental_pct}%</td>
-                                                        <td className="px-8 py-5 text-center font-black text-emerald-600 text-sm">{item.usim_pct}%</td>
-                                                        <td className="px-8 py-5 text-right">
-                                                            <div className="font-black text-slate-800">{item.total_incentive.toLocaleString()}원</div>
-                                                            <div className="text-[10px] font-bold text-slate-400">마진순위: {item.margin_rank}위</div>
-                                                        </td>
-                                                        <td className="px-8 py-5 text-center">
-                                                            <button 
-                                                                onClick={() => { setSelectedAgent(item); setActiveTab('analytics'); }}
-                                                                className="px-4 py-2 bg-slate-900 text-white text-[10px] font-black rounded-lg hover:bg-blue-600 transition-colors uppercase tracking-wider"
-                                                            >
-                                                                분석보기
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeTab === 'analytics' && selectedAgent && (
-                                <div className="animate-in slide-in-from-bottom-4 duration-700 space-y-8">
-                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                        {/* 프로필 카드 */}
-                                        <div className="lg:col-span-1 bg-slate-900 rounded-[2.5rem] p-10 text-white shadow-2xl shadow-slate-900/20 relative overflow-hidden">
-                                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
-                                            <div className="flex items-center gap-6 mb-10">
-                                                <div className="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center font-black text-3xl shadow-xl shadow-blue-600/30">
-                                                    {selectedAgent.display_name[0]}
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-3xl font-black tracking-tight">{selectedAgent.display_name}</h3>
-                                                    <p className="text-blue-400 font-bold text-sm">{selectedAgent.counselor_info?.skill} 전문</p>
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="space-y-6">
-                                                <div className="flex justify-between items-end border-b border-white/10 pb-4">
-                                                    <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">수신콜</span>
-                                                    <span className="text-xl font-black">{selectedAgent.call_count}건</span>
-                                                </div>
-                                                <div className="flex justify-between items-end border-b border-white/10 pb-4">
-                                                    <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">콜 효율</span>
-                                                    <span className="text-xl font-black text-blue-400">{(selectedAgent.call_efficiency * 100).toFixed(1)}%</span>
-                                                </div>
-                                                <div className="pt-4">
-                                                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mb-1">인센티브 랭킹</p>
-                                                    <div className="text-4xl font-black text-emerald-400">TOP 15%</div>
-                                                </div>
-                                            </div>
+                            ) : (
+                                <div className="max-w-6xl mx-auto space-y-8">
+                                    {/* 요약 카드 */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">조회된 상담원</p>
+                                            <p className="text-3xl font-black text-slate-800">{displayData.length}<span className="text-lg ml-1 text-slate-400">명</span></p>
                                         </div>
+                                        <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">평균 인터넷 성공률</p>
+                                            <p className="text-3xl font-black text-blue-600">
+                                                {displayData.length > 0 ? (displayData.reduce((acc, cur) => acc + parseFloat(cur.internet_pct), 0) / displayData.length).toFixed(1) : 0}%
+                                            </p>
+                                        </div>
+                                        <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">총 인센티브 합계</p>
+                                            <p className="text-3xl font-black text-emerald-600">
+                                                {displayData.reduce((acc, cur) => acc + (cur.total_incentive || 0), 0).toLocaleString()}원
+                                            </p>
+                                        </div>
+                                    </div>
 
-                                        {/* Radar 차트 분석 */}
-                                        <div className="lg:col-span-2 bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-sm flex flex-col md:flex-row gap-10 items-center">
-                                            <div className="w-full h-80 md:w-1/2">
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarChartData}>
-                                                        <PolarGrid stroke="#f1f5f9" />
-                                                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 12, fontWeight: 700 }} />
-                                                        <Radar name="본인" dataKey="A" stroke="#2563eb" fill="#2563eb" fillOpacity={0.5} />
-                                                        <Radar name="전체평균" dataKey="B" stroke="#cbd5e1" fill="#cbd5e1" fillOpacity={0.2} />
-                                                        <RechartsTooltip />
-                                                        <Legend />
-                                                    </RadarChart>
-                                                </ResponsiveContainer>
-                                            </div>
-                                            <div className="w-full md:w-1/2 space-y-4">
-                                                <h4 className="font-black text-slate-800 text-xl mb-4">상세 역량 평가</h4>
-                                                {[
-                                                    { label: '인터넷 성취도', value: selectedAgent.internet_pct, color: 'blue' },
-                                                    { label: '렌탈 전환력', value: selectedAgent.rental_pct, color: 'amber' },
-                                                    { label: '유심 보급률', value: selectedAgent.usim_pct, color: 'emerald' }
-                                                ].map((stat, i) => (
-                                                    <div key={i} className="p-5 bg-slate-50 rounded-2xl border border-slate-100 group hover:bg-white hover:shadow-md transition-all">
-                                                        <div className="flex justify-between items-center mb-2">
-                                                            <span className="text-xs font-black text-slate-500 uppercase">{stat.label}</span>
-                                                            <span className={`text-sm font-black text-${stat.color}-600`}>{stat.value}%</span>
-                                                        </div>
-                                                        <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                                                            <div className={`bg-${stat.color}-500 h-full rounded-full transition-all duration-1000`} style={{width: `${stat.value}%`}}></div>
+                                    {/* 탭별 화면 */}
+                                    {activeTab === 'dashboard' && (
+                                        <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden animate-in fade-in duration-500">
+                                            <table className="w-full text-left">
+                                                <thead className="bg-slate-50 border-b border-slate-100 font-black text-[10px] text-slate-400 uppercase tracking-widest">
+                                                    <tr>
+                                                        <th className="px-8 py-5">성명 / 소속</th>
+                                                        <th className="px-8 py-5 text-center">인터넷</th>
+                                                        <th className="px-8 py-5 text-center">렌탈</th>
+                                                        <th className="px-8 py-5 text-center">유심</th>
+                                                        <th className="px-8 py-5 text-right">인센티브</th>
+                                                        <th className="px-8 py-5 text-center">분석</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-50">
+                                                    {displayData.length > 0 ? displayData.map(item => (
+                                                        <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
+                                                            <td className="px-8 py-5">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center font-black text-slate-500 group-hover:bg-blue-600 group-hover:text-white transition-all">{item.name[0]}</div>
+                                                                    <div>
+                                                                        <div className="font-black text-slate-800 text-sm">{item.name}</div>
+                                                                        <div className="text-[10px] font-bold text-slate-400 uppercase">{item.center} · {item.part}</div>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-8 py-5 text-center">
+                                                                <span className="font-black text-blue-600 text-sm">{item.internet_pct}%</span>
+                                                            </td>
+                                                            <td className="px-8 py-5 text-center font-black text-slate-600 text-sm">{item.rental_pct}%</td>
+                                                            <td className="px-8 py-5 text-center font-black text-slate-600 text-sm">{item.usim_pct}%</td>
+                                                            <td className="px-8 py-5 text-right font-black text-slate-800 text-sm">{(item.total_incentive || 0).toLocaleString()}원</td>
+                                                            <td className="px-8 py-5 text-center">
+                                                                <button onClick={() => { setSelectedAgent(item); setActiveTab('analytics'); }} className="p-2 hover:bg-slate-900 hover:text-white rounded-lg transition-all">
+                                                                    <i data-lucide="bar-chart-2" size="14"></i>
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    )) : (
+                                                        <tr>
+                                                            <td colSpan="6" className="px-8 py-20 text-center text-slate-400 font-bold">검색 결과가 없습니다.</td>
+                                                        </tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+
+                                    {activeTab === 'analytics' && selectedAgent && (
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in slide-in-from-bottom-4 duration-500">
+                                            <div className="lg:col-span-1 bg-slate-900 rounded-[2.5rem] p-10 text-white shadow-xl relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/20 rounded-full -mr-10 -mt-10 blur-3xl"></div>
+                                                <div className="relative z-10">
+                                                    <div className="flex items-center gap-4 mb-10">
+                                                        <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl font-black">{selectedAgent.name[0]}</div>
+                                                        <div>
+                                                            <h3 className="text-2xl font-black">{selectedAgent.name}</h3>
+                                                            <p className="text-blue-400 font-bold text-xs uppercase tracking-widest">{selectedAgent.center} · {selectedAgent.part}</p>
                                                         </div>
                                                     </div>
-                                                ))}
+                                                    <div className="space-y-6">
+                                                        <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
+                                                            <p className="text-white/40 text-[10px] font-black uppercase mb-1 tracking-widest">성과 포인트</p>
+                                                            <p className="text-4xl font-black text-emerald-400">{(selectedAgent.total_incentive || 0).toLocaleString()}<span className="text-sm ml-1">P</span></p>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-4 text-center">
+                                                            <div className="bg-white/5 p-4 rounded-2xl">
+                                                                <p className="text-white/40 text-[10px] font-black uppercase mb-1">마진순위</p>
+                                                                <p className="text-xl font-black">{selectedAgent.margin_rank}위</p>
+                                                            </div>
+                                                            <div className="bg-white/5 p-4 rounded-2xl">
+                                                                <p className="text-white/40 text-[10px] font-black uppercase mb-1">콜 수신</p>
+                                                                <p className="text-xl font-black">{selectedAgent.call_count}건</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
 
-                            {activeTab === 'settings' && (
-                                <div className="max-w-2xl mx-auto py-10 animate-in zoom-in-95 duration-500">
-                                    <div className="bg-white rounded-[3rem] p-12 shadow-2xl border border-slate-200 text-center">
-                                        <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-8">
-                                            <i data-lucide="database" className="text-blue-600" size="32"></i>
-                                        </div>
-                                        <h3 className="text-3xl font-black text-slate-800 mb-2">Supabase 연결 설정</h3>
-                                        <p className="text-slate-400 font-medium mb-10">실시간 데이터 동기화를 위해 프로젝트 정보를 입력하세요.</p>
-                                        
-                                        <div className="space-y-6 text-left">
-                                            <div>
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Project Endpoint URL</label>
-                                                <input 
-                                                    type="text" value={url} onChange={(e)=>setUrl(e.target.value)}
-                                                    className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-xs"
-                                                />
+                                            <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-slate-200 p-10 flex flex-col md:flex-row items-center gap-10">
+                                                <div className="w-full md:w-1/2 max-w-[280px]">
+                                                    <PerformanceChart 
+                                                        label={selectedAgent.name}
+                                                        data={[
+                                                            selectedAgent.internet_success_rate * 100,
+                                                            selectedAgent.rental_success_rate * 100,
+                                                            selectedAgent.usim_conversion_rate * 100,
+                                                            (1 - (selectedAgent.margin_rank / 100)) * 100,
+                                                            selectedAgent.call_efficiency * 100
+                                                        ]} 
+                                                    />
+                                                </div>
+                                                <div className="flex-1 w-full space-y-4">
+                                                    <h4 className="font-black text-slate-800 text-lg mb-6">핵심 성과 리포트</h4>
+                                                    {[
+                                                        { label: '인터넷 성공률', val: selectedAgent.internet_pct, color: 'bg-blue-600' },
+                                                        { label: '렌탈 전환율', val: selectedAgent.rental_pct, color: 'bg-slate-700' },
+                                                        { label: '유심 가입률', val: selectedAgent.usim_pct, color: 'bg-emerald-600' }
+                                                    ].map(s => (
+                                                        <div key={s.label}>
+                                                            <div className="flex justify-between text-xs font-black mb-1.5 uppercase">
+                                                                <span className="text-slate-400">{s.label}</span>
+                                                                <span>{s.val}%</span>
+                                                            </div>
+                                                            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                                                <div className={`${s.color} h-full transition-all duration-1000`} style={{width: `${s.val}%`}}></div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
-                                            <div>
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Anon Public API Key</label>
-                                                <textarea 
-                                                    rows="4" value={apiKey} onChange={(e)=>setApiKey(e.target.value)}
-                                                    className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-[10px] resize-none"
-                                                />
-                                            </div>
-                                            <button 
-                                                onClick={fetchData}
-                                                className="w-full bg-slate-900 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-black transition-all flex items-center justify-center gap-3"
-                                            >
-                                                <i data-lucide="zap" size="18"></i> 설정 업데이트 및 재연결
-                                            </button>
                                         </div>
-                                    </div>
+                                    )}
+
+                                    {activeTab === 'settings' && (
+                                        <div className="max-w-xl mx-auto bg-white rounded-[2.5rem] p-10 border border-slate-200">
+                                            <h3 className="text-2xl font-black mb-6">Supabase 커넥터</h3>
+                                            <div className="space-y-4">
+                                                <input type="text" value={url} onChange={(e)=>setUrl(e.target.value)} className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Project URL" />
+                                                <textarea rows="3" value={apiKey} onChange={(e)=>setApiKey(e.target.value)} className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-[10px] focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="API Key" />
+                                                <button onClick={fetchAllData} className="w-full bg-slate-900 text-white font-black py-4 rounded-xl hover:bg-blue-600 transition-all">데이터베이스 동기화</button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
